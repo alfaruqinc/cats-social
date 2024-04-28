@@ -23,6 +23,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// cat
 	cat := apiV1.Group("/cat")
 	cat.GET("", func(c *gin.Context) { c.String(200, "HALO CAT") })
+	cat.POST("", handleAddNewCat)
 
 	// cat match
 	catMatch := cat.Group("/match")
