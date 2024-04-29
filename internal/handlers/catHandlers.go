@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
@@ -65,6 +66,13 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		for _, imageUrl := range catBody.ImageUrls {
 			if len(imageUrl) < 1 {
 				err := errors.New("image urls cannot have empty item")
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			_, err := url.ParseRequestURI(imageUrl)
+			if err != nil {
+				err := errors.New("image url should have valid url")
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
