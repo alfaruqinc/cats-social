@@ -27,6 +27,8 @@ var (
 	port       = os.Getenv("DB_PORT")
 	host       = os.Getenv("DB_HOST")
 	params     = os.Getenv("DB_PARAMS")
+	JWTSecret  = os.Getenv("JWT_SECRET")
+	BcryptSalt = os.Getenv("BCRYPT_SALT")
 	dbInstance *service
 )
 
