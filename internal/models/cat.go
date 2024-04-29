@@ -44,3 +44,15 @@ var CatRace = []string{
 }
 
 var CatSex = []string{"male", "female"}
+
+type CatQueryParams struct {
+	Id               string `form:"id"`
+	Limit            int32  `form:"limit"`
+	Offset           int32  `form:"offset"`
+	Race             string `form:"race"`
+	Sex              string `form:"sex"`
+	IsAlreadyMatched bool   `form:"isAlreadyMatched"`
+	AgeInMonth       int32  `form:"ageInMonth"`
+	Owned            bool   `form:"owned"`
+	Search           string `form:"search"`
+}

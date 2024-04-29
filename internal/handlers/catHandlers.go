@@ -98,6 +98,12 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var queryParams models.CatQueryParams
+		if err := c.ShouldBindQuery(&queryParams); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		query := `
 		SELECT id, name, race, sex,
 			age_in_month, image_urls, description,
