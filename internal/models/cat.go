@@ -15,6 +15,7 @@ type Cat struct {
 	AgeInMonth  int32     `json:"ageInMonth" db:"age_in_month"`
 	Description string    `json:"description" db:"description"`
 	ImageUrls   []string  `json:"imageUrls" db:"image_urls"`
+	HasMatched  bool      `json:"hasMatched" db:"has_matched"`
 }
 
 func NewCat() *Cat {
@@ -22,7 +23,11 @@ func NewCat() *Cat {
 	createdAt := time.Now().Format(time.RFC3339)
 	parsedCreatedAt, _ := time.Parse(time.RFC3339, createdAt)
 
-	return &Cat{ID: id, CreatedAt: parsedCreatedAt}
+	return &Cat{
+		ID:         id,
+		CreatedAt:  parsedCreatedAt,
+		HasMatched: false,
+	}
 }
 
 var CatRace = []string{
