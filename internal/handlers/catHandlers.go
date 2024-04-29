@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,13 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		}
 
 		if len(catBody.Name) < 1 || len(catBody.Name) > 30 {
-			err := errors.New("name length should between 1 and 30 characters")
+			err := errors.New("name length should be between 1 and 30 characters")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if slices.Contains(models.CatRace, catBody.Race) != true {
+			err := errors.New("accepted race is only Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman")
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

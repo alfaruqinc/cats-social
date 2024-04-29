@@ -24,3 +24,16 @@ func NewCat() *Cat {
 
 	return &Cat{ID: id, CreatedAt: parsedCreatedAt}
 }
+
+var CatRace = []string{
+	"Persian",
+	"Maine Coon",
+	"Siamese",
+	"Ragdoll",
+	"Bengal",
+	"Sphynx",
+	"British Shorthair",
+	"Abyssinian",
+	"Scottish Fold",
+	"Birman",
+}
