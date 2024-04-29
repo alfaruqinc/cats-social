@@ -12,10 +12,10 @@ import (
 )
 
 type User struct {
-	Uuid     string `json:"uuid"`
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
+	Id       uuid.UUID `json:"id"`
+	Email    string    `json:"email"`
+	Name     string    `json:"name"`
+	Password string    `json:"password"`
 }
 
 var invalidTokenErr = NewUnauthenticatedError("invalid token")
@@ -54,7 +54,7 @@ func (u *User) GenerateToken() string {
 
 func (u *User) tokenClaim() jwt.MapClaims {
 	return jwt.MapClaims{
-		"uuid": u.Uuid,
+		"id":   u.Id,
 		"name": u.Name,
 		"exp":  time.Now().Add(time.Hour * 8).Unix(),
 	}
@@ -92,10 +92,10 @@ func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
 
 func (u *User) bindTokenToUserEntity(claim jwt.MapClaims) MessageErr {
 
-	if uuid, ok := claim["uuid"].(string); !ok {
+	if uuid, ok := claim["id"].(uuid.UUID); !ok {
 		return invalidTokenErr
 	} else {
-		u.Uuid = uuid
+		u.Id = uuid
 	}
 
 	if name, ok := claim["name"].(string); !ok {
