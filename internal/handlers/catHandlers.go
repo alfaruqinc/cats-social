@@ -98,7 +98,10 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		query := `SELECT id, name, race, sex, age_in_month, image_urls, description, created_at
+		query := `
+		SELECT id, name, race, sex,
+			age_in_month, image_urls, description,
+			created_at, has_matched
 		FROM cats
 		`
 
@@ -115,7 +118,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		for rows.Next() {
 			cat := &models.Cat{}
 
-			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt)
+			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
