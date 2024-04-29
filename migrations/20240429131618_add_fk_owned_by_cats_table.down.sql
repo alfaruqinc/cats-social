@@ -1,0 +1,9 @@
+BEGIN;
+
+ALTER TABLE cats
+DROP CONSTRAINT fk_cats_users;
+
+ALTER TABLE cats
+DROP COLUMN owned_by;
+
+COMMIT;
