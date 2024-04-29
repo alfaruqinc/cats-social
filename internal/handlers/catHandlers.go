@@ -3,6 +3,7 @@ package handlers
 import (
 	"cats-social/internal/models"
 	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
@@ -20,6 +21,12 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		catBody := models.NewCat()
 		if err := c.ShouldBindJSON(&catBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(catBody.Name) < 1 || len(catBody.Name) > 30 {
+			err := errors.New("name length should between 1 and 30 characters")
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
