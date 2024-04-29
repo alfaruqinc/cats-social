@@ -37,3 +37,5 @@ var CatRace = []string{
 	"Scottish Fold",
 	"Birman",
 }
+
+var CatSex = []string{"male", "female"}
