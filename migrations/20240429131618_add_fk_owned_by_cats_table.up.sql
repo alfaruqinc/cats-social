@@ -1,0 +1,11 @@
+BEGIN;
+
+ALTER TABLE cats
+ADD COLUMN owned_by UUID NOT NULL;
+
+ALTER TABLE cats
+ADD CONSTRAINT fk_cats_users
+FOREIGN KEY (owned_by)
+REFERENCES users;
+
+COMMIT;
