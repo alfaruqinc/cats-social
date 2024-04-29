@@ -20,22 +20,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// cat
 	cat := apiV1.Group("/cat")
 	cat.GET("", func(c *gin.Context) { c.String(200, "HALO CAT") })
-	cat.POST("", handlers.HandleAddNewCat())
+	cat.POST("", handlers.HandleAddNewCat(s.db))
 
 	// cat match
 	catMatch := cat.Group("/match")
 	catMatch.GET("", func(c *gin.Context) { c.String(200, "HALO CAT MATCH") })
 
 	return r
-}
-
-func (s *Server) HelloWorldHandler(c *gin.Context) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
-
-	c.JSON(http.StatusOK, resp)
-}
-
-func (s *Server) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, s.db.Health())
 }
