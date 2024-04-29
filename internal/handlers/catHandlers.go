@@ -62,6 +62,14 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		for _, imageUrl := range catBody.ImageUrls {
+			if len(imageUrl) < 1 {
+				err := errors.New("image urls cannot have empty item")
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
 		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`
