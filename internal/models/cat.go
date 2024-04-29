@@ -12,14 +12,35 @@ type Cat struct {
 	Name        string    `json:"name" db:"name"`
 	Race        string    `json:"race" db:"race"`
 	Sex         string    `json:"sex" db:"sex"`
-	AgeInMonth  uint16    `json:"ageInMonth" db:"age_in_month"`
+	AgeInMonth  int32     `json:"ageInMonth" db:"age_in_month"`
 	Description string    `json:"description" db:"description"`
 	ImageUrls   []string  `json:"imageUrls" db:"image_urls"`
+	HasMatched  bool      `json:"hasMatched" db:"has_matched"`
 }
 
 func NewCat() *Cat {
 	id := uuid.New()
-	createdAt := time.Now()
+	createdAt := time.Now().Format(time.RFC3339)
+	parsedCreatedAt, _ := time.Parse(time.RFC3339, createdAt)
 
-	return &Cat{ID: id, CreatedAt: createdAt}
+	return &Cat{
+		ID:         id,
+		CreatedAt:  parsedCreatedAt,
+		HasMatched: false,
+	}
 }
+
+var CatRace = []string{
+	"Persian",
+	"Maine Coon",
+	"Siamese",
+	"Ragdoll",
+	"Bengal",
+	"Sphynx",
+	"British Shorthair",
+	"Abyssinian",
+	"Scottish Fold",
+	"Birman",
+}
+
+var CatSex = []string{"male", "female"}
