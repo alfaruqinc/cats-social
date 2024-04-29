@@ -3,7 +3,10 @@ package handlers
 import (
 	"cats-social/internal/models"
 	"database/sql"
+	"errors"
 	"net/http"
+	"net/url"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +25,57 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&catBody); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
+		}
+
+		if len(catBody.Name) < 1 || len(catBody.Name) > 30 {
+			err := errors.New("name length should be between 1 and 30 characters")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if slices.Contains(models.CatRace, catBody.Race) != true {
+			err := errors.New("accepted race is only Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if slices.Contains(models.CatSex, catBody.Sex) != true {
+			err := errors.New("accepted sex is only male and female")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if catBody.AgeInMonth < 1 || catBody.AgeInMonth > 120082 {
+			err := errors.New("your cat's age is minimum 1 month and maximum 120082 month")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(catBody.Description) < 1 || len(catBody.Description) > 200 {
+			err := errors.New("description length should be between 1 and 200 characters")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(catBody.ImageUrls) < 1 {
+			err := errors.New("image urls at least have 1 image")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		for _, imageUrl := range catBody.ImageUrls {
+			if len(imageUrl) < 1 {
+				err := errors.New("image urls cannot have empty item")
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			_, err := url.ParseRequestURI(imageUrl)
+			if err != nil {
+				err := errors.New("image url should have valid url")
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
 		}
 
 		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls)
