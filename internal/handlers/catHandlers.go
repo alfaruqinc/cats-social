@@ -4,9 +4,11 @@ import (
 	"cats-social/internal/models"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -98,18 +100,23 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var queryParams models.CatQueryParams
-		if err := c.ShouldBindQuery(&queryParams); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
 		query := `
 		SELECT id, name, race, sex,
 			age_in_month, image_urls, description,
 			created_at, has_matched
 		FROM cats
 		`
+
+		queryParams := c.Request.URL.Query()
+		var args []any
+		if len(queryParams) > 0 {
+			whereClause := make([]string, 0, len(queryParams))
+			for key, value := range queryParams {
+				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
+				args = append(args, value[0])
+			}
+			query += " WHERE " + strings.Join(whereClause, " AND ")
+		}
 
 		rows, err := db.Query(query)
 		if err != nil {
