@@ -118,13 +118,21 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 					continue
 				}
 
+				if key == "isAlreadyMatched" {
+					key = "has_matched"
+				}
+
+				if key == "ageInMonth" {
+					key = "age_in_month"
+				}
+
 				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
 				args = append(args, value[0])
 			}
 			query += " WHERE " + strings.Join(whereClause, " AND ")
 		}
 
-		rows, err := db.Query(query)
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
