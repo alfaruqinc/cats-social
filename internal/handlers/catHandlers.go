@@ -113,7 +113,8 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			whereClause := make([]string, 0, len(queryParams))
 			for key, value := range queryParams {
 				undefinedParam := slices.Contains(models.CatQueryParams, key) != true
-				if undefinedParam {
+				limitOffset := key == "limit" || key == "offset"
+				if undefinedParam || limitOffset {
 					continue
 				}
 
