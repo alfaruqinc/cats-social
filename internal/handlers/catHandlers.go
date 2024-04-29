@@ -112,6 +112,11 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		if len(queryParams) > 0 {
 			whereClause := make([]string, 0, len(queryParams))
 			for key, value := range queryParams {
+				undefinedParam := slices.Contains(models.CatQueryParams, key) != true
+				if undefinedParam {
+					continue
+				}
+
 				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
 				args = append(args, value[0])
 			}
