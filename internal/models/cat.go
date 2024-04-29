@@ -19,7 +19,8 @@ type Cat struct {
 
 func NewCat() *Cat {
 	id := uuid.New()
-	createdAt := time.Now()
+	createdAt := time.Now().Format(time.RFC3339)
+	parsedCreatedAt, _ := time.Parse(time.RFC3339, createdAt)
 
-	return &Cat{ID: id, CreatedAt: createdAt}
+	return &Cat{ID: id, CreatedAt: parsedCreatedAt}
 }
