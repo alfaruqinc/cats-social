@@ -1,7 +1,6 @@
 package models
 
 import (
-	"cats-social/internal/database"
 	"strconv"
 	"strings"
 	"time"
@@ -11,21 +10,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type TokenService interface {
+	GetJWTSecret() string
+	GetBcryptSalt() string
+}
+
 type User struct {
-	Id       uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Name     string    `json:"name"`
-	Password string    `json:"password"`
+	Id           uuid.UUID    `json:"id"`
+	Email        string       `json:"email"`
+	Name         string       `json:"name"`
+	Password     string       `json:"password"`
+	TokenService TokenService // Menambahkan dependensi tokenService
 }
 
 var invalidTokenErr = NewUnauthenticatedError("invalid token")
 
-func CreateUserUUID() string {
-	return uuid.New().String()
-}
-
 func (u *User) HashPassword() MessageErr {
-	salt, err := strconv.Atoi(database.BcryptSalt)
+	salt, err := strconv.Atoi(u.TokenService.GetBcryptSalt())
 
 	if err != nil {
 		return NewInternalServerError("SOMETHING WENT WRONG")
@@ -46,24 +47,23 @@ func (u *User) ComparePassword(password string) bool {
 	return err == nil
 }
 
-func (u *User) GenerateToken() string {
-	claims := u.tokenClaim()
-
-	return u.signToken(claims)
-}
-
-func (u *User) tokenClaim() jwt.MapClaims {
-	return jwt.MapClaims{
+func (u *User) GenerateToken(signingKey []byte) (string, error) {
+	claims := jwt.MapClaims{
 		"id":   u.Id,
 		"name": u.Name,
 		"exp":  time.Now().Add(time.Hour * 8).Unix(),
 	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(signingKey)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
-
 func (u *User) signToken(claims jwt.MapClaims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	secretKey := database.JWTSecret
+	secretKey := u.TokenService.GetJWTSecret()
 
 	tokenString, _ := token.SignedString([]byte(secretKey))
 
@@ -77,7 +77,7 @@ func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
 			return nil, invalidTokenErr
 		}
 
-		secretKey := database.JWTSecret
+		secretKey := u.TokenService.GetJWTSecret()
 
 		return []byte(secretKey), nil
 	})

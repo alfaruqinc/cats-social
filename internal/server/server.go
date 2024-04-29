@@ -13,10 +13,31 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-var (
-	JWTSecret  = os.Getenv("JWT_SECRET")
-	BcryptSalt = os.Getenv("BCRYPT_SALT")
-)
+type TokenService interface {
+	GetJWTSecret() string
+	GetBcryptSalt() string
+}
+
+type token struct {
+	JWTSecret  string
+	BcryptSalt string
+}
+
+func NewTokenService() *token {
+	return &token{}
+}
+
+func (t *token) GetJWTSecret() string {
+	t.JWTSecret = os.Getenv("JWT_Secret")
+
+	return t.JWTSecret
+}
+
+func (t *token) GetBcryptSalt() string {
+	t.BcryptSalt = os.Getenv("Bcrypt_Salt")
+
+	return t.BcryptSalt
+}
 
 type Server struct {
 	port int
