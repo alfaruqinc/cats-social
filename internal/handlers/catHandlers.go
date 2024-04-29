@@ -44,6 +44,12 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		if catBody.AgeInMonth < 1 || catBody.AgeInMonth > 120082 {
+			err := errors.New("your cat's age is minimum 1 month and maximum 120082 month")
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`

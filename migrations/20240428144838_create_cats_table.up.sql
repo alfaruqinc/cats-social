@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS cats (
     name VARCHAR(30) NOT NULL,
     race VARCHAR(24) NOT NULL,
     sex VARCHAR(6) NOT NULL,
-    age_in_month SMALLINT NOT NULL,
+    age_in_month INT NOT NULL,
     description VARCHAR(200) NOT NULL,
     image_urls TEXT[] NOT NULL
 );
