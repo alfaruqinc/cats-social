@@ -1,29 +1,37 @@
 package server
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
-
-	"cats-social/internal/database"
 )
 
 type Server struct {
 	port int
 
-	db database.Service
+	db *sql.DB
 }
 
 func NewServer() *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	connStr := os.Getenv("DB_URL")
+
+	db, err := sql.Open("pgx", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	NewServer := &Server{
 		port: port,
 
-		db: database.New(),
+		db: db,
 	}
 
 	// Declare Server config
