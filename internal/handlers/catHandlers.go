@@ -30,55 +30,10 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		if len(catBody.Name) < 1 || len(catBody.Name) > 30 {
-			err := errors.New("name length should be between 1 and 30 characters")
+		err := validateRequestBody(*catBody)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		}
-
-		if slices.Contains(models.CatRace, catBody.Race) != true {
-			err := errors.New("accepted race is only Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman")
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if slices.Contains(models.CatSex, catBody.Sex) != true {
-			err := errors.New("accepted sex is only male and female")
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if catBody.AgeInMonth < 1 || catBody.AgeInMonth > 120082 {
-			err := errors.New("your cat's age is minimum 1 month and maximum 120082 month")
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if len(catBody.Description) < 1 || len(catBody.Description) > 200 {
-			err := errors.New("description length should be between 1 and 200 characters")
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if len(catBody.ImageUrls) < 1 {
-			err := errors.New("image urls at least have 1 image")
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		for _, imageUrl := range catBody.ImageUrls {
-			if len(imageUrl) < 1 {
-				err := errors.New("image urls cannot have empty item")
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
-
-			_, err := url.ParseRequestURI(imageUrl)
-			if err != nil {
-				err := errors.New("image url should have valid url")
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
 		}
 
 		// TODO: delete after auth api finish
@@ -88,7 +43,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls, owned_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
-		_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
+		_, err = db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
