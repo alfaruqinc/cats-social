@@ -72,7 +72,7 @@ func BadRequest(message string) error {
 func NewInternalServerError(message string) MessageErr {
 	return &ErrorData{
 		ErrMessage: message,
-		ErrStatus:  http.StatusInternalServerError, //500
+		ErrStatus:  http.StatusInternalServerError, // 500
 		ErrError:   "INTERNAL_SERVER_ERROR",
 	}
 }

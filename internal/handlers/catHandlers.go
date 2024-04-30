@@ -32,7 +32,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 		err := validateRequestBody(*catBody)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, models.NewBadRequest(err.Error()))
 			return
 		}
 
@@ -45,7 +45,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		`
 		_, err = db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, models.NewInternalServerError(err.Error()))
 			return
 		}
 
@@ -79,7 +79,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, models.NewInternalServerError(err.Error()))
 			return
 		}
 		defer rows.Close()
@@ -92,7 +92,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, models.NewInternalServerError(err.Error()))
 				return
 			}
 
