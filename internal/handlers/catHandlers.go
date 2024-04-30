@@ -123,6 +123,13 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 					continue
 				}
 
+				if key == "id" {
+					_, err := uuid.Parse(value[0])
+					if err != nil {
+						continue
+					}
+				}
+
 				if key == "isAlreadyMatched" {
 					key = "has_matched"
 				}
@@ -153,6 +160,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 				query += " WHERE " + strings.Join(whereClause, " AND ")
 			}
 		}
+		fmt.Println(query)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
