@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -15,12 +16,44 @@ type TokenService interface {
 	GetBcryptSalt() string
 }
 
+type tokenService struct {
+	JWTSecret  string
+	BcryptSalt string
+}
+
+func NewTokenService() *tokenService {
+	return &tokenService{
+		JWTSecret:  os.Getenv("JWT_SECRET"),
+		BcryptSalt: os.Getenv("BCRYPT_SALT"),
+	}
+}
+
+func (t *tokenService) GetJWTSecret() string {
+
+	return t.JWTSecret
+}
+
+func (t *tokenService) GetBcryptSalt() string {
+
+	return t.BcryptSalt
+}
+
 type User struct {
-	Id           uuid.UUID    `json:"id"`
-	Email        string       `json:"email"`
-	Name         string       `json:"name"`
-	Password     string       `json:"password"`
-	TokenService TokenService // Menambahkan dependensi tokenService
+	Id           uuid.UUID `json:"id" db:"id"`
+	Email        string    `json:"email" db:"email"`
+	Name         string    `json:"name" db:"name"`
+	Password     string    `json:"password" db:"password"`
+	TokenService TokenService
+}
+
+func NewUser() *User {
+	id := uuid.New()
+	token := NewTokenService()
+
+	return &User{
+		Id:           id,
+		TokenService: token,
+	}
 }
 
 var invalidTokenErr = NewUnauthenticatedError("invalid token")
@@ -47,27 +80,18 @@ func (u *User) ComparePassword(password string) bool {
 	return err == nil
 }
 
-func (u *User) GenerateToken(signingKey []byte) (string, error) {
+func (u *User) GenerateToken() (string, error) {
 	claims := jwt.MapClaims{
 		"id":   u.Id,
 		"name": u.Name,
 		"exp":  time.Now().Add(time.Hour * 8).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(signingKey)
+	tokenString, err := token.SignedString([]byte(u.TokenService.GetJWTSecret()))
 	if err != nil {
 		return "", err
 	}
 	return tokenString, nil
-}
-func (u *User) signToken(claims jwt.MapClaims) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	secretKey := u.TokenService.GetJWTSecret()
-
-	tokenString, _ := token.SignedString([]byte(secretKey))
-
-	return tokenString
 }
 
 func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
