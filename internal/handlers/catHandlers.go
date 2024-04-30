@@ -80,10 +80,14 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			}
 		}
 
-		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		// TODO: delete after auth api finish
+		parsed, _ := uuid.Parse("e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b")
+		catBody.OwnedBy = parsed
+
+		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls, owned_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
-		_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls)
+		_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -124,6 +128,16 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 				if key == "ageInMonth" {
 					key = "age_in_month"
+				}
+
+				if key == "owned" {
+					if value[0] != "true" {
+						continue
+					}
+
+					key = "owned_by"
+					// TODO: change value of value[0] with user id after auth api finish
+					// value[0] = userId
 				}
 
 				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
