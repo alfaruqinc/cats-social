@@ -184,7 +184,6 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 				query += " WHERE " + strings.Join(whereClause, " AND ")
 			}
 		}
-		fmt.Println(query)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
