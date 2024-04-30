@@ -45,3 +45,15 @@ var CatRace = []string{
 }
 
 var CatSex = []string{"male", "female"}
+
+var CatQueryParams = []string{
+	"id",
+	"limit",
+	"offset",
+	"race",
+	"sex",
+	"isAlreadyMatched",
+	"ageInMonth",
+	"owned",
+	"search",
+}

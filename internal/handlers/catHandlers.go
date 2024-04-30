@@ -4,9 +4,11 @@ import (
 	"cats-social/internal/models"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -78,10 +80,14 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			}
 		}
 
-		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		// TODO: delete after auth api finish
+		parsed, _ := uuid.Parse("e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b")
+		catBody.OwnedBy = parsed
+
+		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls, owned_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
-		_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls)
+		_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -98,11 +104,53 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		query := `SELECT id, name, race, sex, age_in_month, image_urls, description, created_at
+		query := `
+		SELECT id, name, race, sex,
+			age_in_month, image_urls, description,
+			created_at, has_matched
 		FROM cats
 		`
 
-		rows, err := db.Query(query)
+		queryParams := c.Request.URL.Query()
+		var args []any
+		if len(queryParams) > 0 {
+			whereClause := make([]string, 0, len(queryParams))
+			for key, value := range queryParams {
+				undefinedParam := slices.Contains(models.CatQueryParams, key) != true
+				limitOffset := key == "limit" || key == "offset"
+				if undefinedParam || limitOffset {
+					continue
+				}
+
+				if key == "isAlreadyMatched" {
+					key = "has_matched"
+				}
+
+				if key == "ageInMonth" {
+					key = "age_in_month"
+				}
+
+				if key == "owned" {
+					if value[0] != "true" {
+						continue
+					}
+
+					key = "owned_by"
+					// TODO: change value of value[0] with user id after auth api finish
+					// value[0] = userId
+				}
+
+				if key == "search" {
+					key = "name"
+				}
+
+				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
+				args = append(args, value[0])
+			}
+			query += " WHERE " + strings.Join(whereClause, " AND ")
+		}
+
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -115,7 +163,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		for rows.Next() {
 			cat := &models.Cat{}
 
-			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt)
+			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
