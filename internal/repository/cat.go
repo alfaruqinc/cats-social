@@ -10,8 +10,7 @@ type CatRepository interface {
 	GetAllCats(db *sql.DB) ([]domain.Cat, error)
 }
 
-type CatRepositoryImpl struct {
-}
+type CatRepositoryImpl struct{}
 
 func NewCatRepository() CatRepository {
 	return &CatRepositoryImpl{}
@@ -23,7 +22,7 @@ func (c *CatRepositoryImpl) CreateCat(db *sql.DB, catBody *domain.Cat) error {
 		`
 	_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 	if err != nil {
-		return err
+		return domain.NewInternalServerError(err.Error())
 	}
 
 	return nil
