@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -112,43 +113,14 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		`
 
 		queryParams := c.Request.URL.Query()
-		var args []any
-		if len(queryParams) > 0 {
-			whereClause := make([]string, 0, len(queryParams))
-			for key, value := range queryParams {
-				undefinedParam := slices.Contains(models.CatQueryParams, key) != true
-				limitOffset := key == "limit" || key == "offset"
-				if undefinedParam || limitOffset {
-					continue
-				}
+		// TODO: change userId value to loggedin user after auth api finish
+		userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
+		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, userId)
 
-				if key == "isAlreadyMatched" {
-					key = "has_matched"
-				}
-
-				if key == "ageInMonth" {
-					key = "age_in_month"
-				}
-
-				if key == "owned" {
-					if value[0] != "true" {
-						continue
-					}
-
-					key = "owned_by"
-					// TODO: change value of value[0] with user id after auth api finish
-					// value[0] = userId
-				}
-
-				if key == "search" {
-					key = "name"
-				}
-
-				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
-				args = append(args, value[0])
-			}
+		if len(whereClause) > 0 {
 			query += " WHERE " + strings.Join(whereClause, " AND ")
 		}
+		query += strings.Join(limitOffsetClause, " ")
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
@@ -174,4 +146,90 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{"message": "success", "data": &cats})
 	}
+}
+
+func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]string, []string, []any) {
+	var limitOffsetClause []string
+	var whereClause []string
+	var args []any
+
+	for key, value := range queryParams {
+		undefinedParam := slices.Contains(models.CatQueryParams, key) != true
+		limitOffset := key == "limit" || key == "offset"
+		emptyValue := len(value[0]) < 1
+
+		if limitOffset {
+			limitOffsetClause = append(limitOffsetClause, fmt.Sprintf("%s $%d", key, len(args)+1))
+
+			if key == "limit" && emptyValue {
+				value[0] = "5"
+			}
+			if key == "offset" && emptyValue {
+				value[0] = "0"
+			}
+
+			args = append(args, value[0])
+			continue
+		}
+
+		qParamsToSkip := undefinedParam || limitOffset || emptyValue
+		if qParamsToSkip {
+			continue
+		}
+
+		if key == "id" {
+			_, err := uuid.Parse(value[0])
+			if err != nil {
+				continue
+			}
+		}
+
+		if key == "hasMatched" {
+			key = "has_matched"
+		}
+
+		if key == "ageInMonth" {
+			key = "age_in_month"
+
+			// regex to extract operator (>,=,<) and number
+			extractOperatorAndNumber := regexp.MustCompile(`([>=<])(\d+)`)
+			matches := extractOperatorAndNumber.FindStringSubmatch(value[0])
+			if len(matches) != 3 {
+				continue
+			}
+
+			opr := matches[1]
+			val := matches[2]
+
+			whereClause = append(whereClause, fmt.Sprintf("%s %s $%d", key, opr, len(args)+1))
+			args = append(args, val)
+
+			continue
+		}
+
+		if key == "owned" {
+			if value[0] != "true" && value[0] != "false" {
+				continue
+			}
+
+			key = "owned_by"
+
+			if value[0] == "false" {
+				whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
+				args = append(args, userId)
+				continue
+			}
+
+			value[0] = userId
+		}
+
+		if key == "search" {
+			key = "name"
+		}
+
+		whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
+		args = append(args, value[0])
+	}
+
+	return whereClause, limitOffsetClause, args
 }
