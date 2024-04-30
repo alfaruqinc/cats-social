@@ -11,17 +11,11 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
-
-type response struct {
-	Id        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-}
 
 func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -47,8 +41,8 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		res := &response{
-			Id:        catBody.ID,
+		res := &domain.CreateCatResponse{
+			ID:        catBody.ID,
 			CreatedAt: catBody.CreatedAt,
 		}
 

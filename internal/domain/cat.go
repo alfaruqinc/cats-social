@@ -24,10 +24,9 @@ type Cat struct {
 	OwnedBy     uuid.UUID `json:"-" db:"owned_by"`
 }
 
-type CatResponse struct {
+type CreateCatResponse struct {
 	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
-	Name      string    `json:"name"`
 }
 
 func NewCat() *Cat {
