@@ -154,7 +154,9 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 		undefinedParam := slices.Contains(models.CatQueryParams, key) != true
 		limitOffset := key == "limit" || key == "offset"
 		emptyValue := len(value[0]) < 1
-		if undefinedParam || limitOffset || emptyValue {
+
+		qParamsToSkip := undefinedParam || limitOffset || emptyValue
+		if qParamsToSkip {
 			continue
 		}
 
