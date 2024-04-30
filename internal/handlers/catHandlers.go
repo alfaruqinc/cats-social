@@ -172,8 +172,9 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 		if key == "ageInMonth" {
 			key = "age_in_month"
 
-			re := regexp.MustCompile(`([>=<])(\d+)`)
-			matches := re.FindStringSubmatch(value[0])
+			// regex to extract operator (>,=,<) and number
+			extractOperatorAndNumber := regexp.MustCompile(`([>=<])(\d+)`)
+			matches := extractOperatorAndNumber.FindStringSubmatch(value[0])
 			if len(matches) != 3 {
 				continue
 			}
