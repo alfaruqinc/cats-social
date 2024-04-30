@@ -15,7 +15,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// user
 	user := apiV1.Group("/user")
-	user.GET("", func(c *gin.Context) { c.String(200, "HALO USER") })
+	user.POST("/register", handler.HandleNewUser(s.db))
 
 	// cat
 	cat := apiV1.Group("/cat")
