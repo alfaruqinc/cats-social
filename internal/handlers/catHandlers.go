@@ -140,6 +140,10 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 					// value[0] = userId
 				}
 
+				if key == "search" {
+					key = "name"
+				}
+
 				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
 				args = append(args, value[0])
 			}
