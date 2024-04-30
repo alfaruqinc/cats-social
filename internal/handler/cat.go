@@ -52,7 +52,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			CreatedAt: catBody.CreatedAt,
 		}
 
-		c.JSON(201, gin.H{"message": "success", "data": res})
+		c.JSON(http.StatusCreated, gin.H{"message": "success", "data": res})
 	}
 }
 
