@@ -1,7 +1,7 @@
 package server
 
 import (
-	"cats-social/internal/handlers"
+	"cats-social/internal/handler"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +19,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// cat
 	cat := apiV1.Group("/cat")
-	cat.GET("", handlers.HandleGetAllCats(s.db))
-	cat.POST("", handlers.HandleAddNewCat(s.db))
+	cat.GET("", handler.HandleGetAllCats(s.db))
+	cat.POST("", handler.HandleAddNewCat(s.db))
 
 	// cat match
 	catMatch := cat.Group("/match")

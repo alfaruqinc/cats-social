@@ -1,7 +1,7 @@
-package handlers
+package handler
 
 import (
-	"cats-social/internal/models"
+	"cats-social/internal/domain"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -24,7 +24,7 @@ type response struct {
 
 func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		catBody := models.NewCat()
+		catBody := domain.NewCat()
 		if err := c.ShouldBindJSON(&catBody); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -32,7 +32,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 		err := validateRequestBody(*catBody)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, models.NewBadRequest(err.Error()))
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
@@ -45,7 +45,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		`
 		_, err = db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.NewInternalServerError(err.Error()))
+			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 			return
 		}
 
@@ -79,20 +79,20 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.NewInternalServerError(err.Error()))
+			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 			return
 		}
 		defer rows.Close()
 
-		cats := []*models.Cat{}
+		cats := []*domain.Cat{}
 		m := pgtype.NewMap()
 
 		for rows.Next() {
-			cat := &models.Cat{}
+			cat := &domain.Cat{}
 
 			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, models.NewInternalServerError(err.Error()))
+				c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 				return
 			}
 
@@ -109,7 +109,7 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 	var args []any
 
 	for key, value := range queryParams {
-		undefinedParam := slices.Contains(models.CatQueryParams, key) != true
+		undefinedParam := slices.Contains(domain.CatQueryParams, key) != true
 		limitOffset := key == "limit" || key == "offset"
 		emptyValue := len(value[0]) < 1
 
@@ -189,18 +189,18 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 	return whereClause, limitOffsetClause, args
 }
 
-func validateRequestBody(body models.Cat) error {
+func validateRequestBody(body domain.Cat) error {
 	if len(body.Name) < 1 || len(body.Name) > 30 {
 		err := errors.New("name length should be between 1 and 30 characters")
 		return err
 	}
 
-	if slices.Contains(models.CatRace, body.Race) != true {
+	if slices.Contains(domain.CatRace, body.Race) != true {
 		err := errors.New("accepted race is only Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman")
 		return err
 	}
 
-	if slices.Contains(models.CatSex, body.Sex) != true {
+	if slices.Contains(domain.CatSex, body.Sex) != true {
 		err := errors.New("accepted sex is only male and female")
 		return err
 	}
