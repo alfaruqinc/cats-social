@@ -114,75 +114,73 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 		queryParams := c.Request.URL.Query()
 		var args []any
-		if len(queryParams) > 0 {
-			whereClause := make([]string, 0, len(queryParams))
-			for key, value := range queryParams {
-				undefinedParam := slices.Contains(models.CatQueryParams, key) != true
-				limitOffset := key == "limit" || key == "offset"
-				emptyValue := len(value[0]) < 1
-				if undefinedParam || limitOffset || emptyValue {
+		var whereClause []string
+		for key, value := range queryParams {
+			undefinedParam := slices.Contains(models.CatQueryParams, key) != true
+			limitOffset := key == "limit" || key == "offset"
+			emptyValue := len(value[0]) < 1
+			if undefinedParam || limitOffset || emptyValue {
+				continue
+			}
+
+			if key == "id" {
+				_, err := uuid.Parse(value[0])
+				if err != nil {
+					continue
+				}
+			}
+
+			if key == "hasMatched" {
+				key = "has_matched"
+			}
+
+			if key == "ageInMonth" {
+				key = "age_in_month"
+
+				re := regexp.MustCompile(`([>=<])(\d+)`)
+				matches := re.FindStringSubmatch(value[0])
+				if len(matches) != 3 {
 					continue
 				}
 
-				if key == "id" {
-					_, err := uuid.Parse(value[0])
-					if err != nil {
-						continue
-					}
-				}
+				opr := matches[1]
+				val := matches[2]
 
-				if key == "hasMatched" {
-					key = "has_matched"
-				}
+				whereClause = append(whereClause, fmt.Sprintf("%s %s $%d", key, opr, len(args)+1))
+				args = append(args, val)
 
-				if key == "ageInMonth" {
-					key = "age_in_month"
+				continue
+			}
 
-					re := regexp.MustCompile(`([>=<])(\d+)`)
-					matches := re.FindStringSubmatch(value[0])
-					if len(matches) != 3 {
-						continue
-					}
-
-					opr := matches[1]
-					val := matches[2]
-
-					whereClause = append(whereClause, fmt.Sprintf("%s %s $%d", key, opr, len(args)+1))
-					args = append(args, val)
-
+			if key == "owned" {
+				if value[0] != "true" && value[0] != "false" {
 					continue
 				}
 
-				if key == "owned" {
-					if value[0] != "true" && value[0] != "false" {
-						continue
-					}
+				key = "owned_by"
+				// TODO: change value of userId with user id after auth api finish
+				userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
 
-					key = "owned_by"
-					// TODO: change value of userId with user id after auth api finish
-					userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
-
-					if value[0] == "false" {
-						whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
-						args = append(args, userId)
-						continue
-					}
-
-					// TODO: change value of value[0] with user id after auth api finish
-					value[0] = "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
+				if value[0] == "false" {
+					whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
+					args = append(args, userId)
+					continue
 				}
 
-				if key == "search" {
-					key = "name"
-				}
-
-				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
-				args = append(args, value[0])
+				// TODO: change value of value[0] with user id after auth api finish
+				value[0] = "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
 			}
 
-			if len(whereClause) > 0 {
-				query += " WHERE " + strings.Join(whereClause, " AND ")
+			if key == "search" {
+				key = "name"
 			}
+
+			whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
+			args = append(args, value[0])
+		}
+
+		if len(whereClause) > 0 {
+			query += " WHERE " + strings.Join(whereClause, " AND ")
 		}
 
 		rows, err := db.Query(query, args...)
