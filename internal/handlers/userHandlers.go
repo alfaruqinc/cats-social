@@ -42,6 +42,8 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		userBody.HashPassword()
+
 		query := `INSERT INTO users (id, name, email, password)
 		VALUES ($1, $2, $3, $4)`
 
@@ -51,7 +53,6 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		userBody.HashPassword()
 
 		token, err := models.NewUser().GenerateToken()
 

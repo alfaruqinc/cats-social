@@ -1,6 +1,7 @@
 package models
 
 import (
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,28 @@ type TokenService interface {
 	GetBcryptSalt() string
 }
 
+type tokenService struct {
+	JWTSecret  string
+	BcryptSalt string
+}
+
+func NewTokenService() *tokenService {
+	return &tokenService{
+		JWTSecret:  os.Getenv("JWT_SECRET"),
+		BcryptSalt: os.Getenv("BCRYPT_SALT"),
+	}
+}
+
+func (t *tokenService) GetJWTSecret() string {
+
+	return t.JWTSecret
+}
+
+func (t *tokenService) GetBcryptSalt() string {
+
+	return t.BcryptSalt
+}
+
 type User struct {
 	Id           uuid.UUID `json:"id" db:"id"`
 	Email        string    `json:"email" db:"email"`
@@ -25,9 +48,11 @@ type User struct {
 
 func NewUser() *User {
 	id := uuid.New()
+	token := NewTokenService()
 
 	return &User{
-		Id: id,
+		Id:           id,
+		TokenService: token,
 	}
 }
 

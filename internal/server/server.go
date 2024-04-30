@@ -13,28 +13,6 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-type TokenService struct {
-	JWTSecret  string
-	BcryptSalt string
-}
-
-func NewTokenService() *TokenService {
-	return &TokenService{
-		JWTSecret:  os.Getenv("JWT_Secret"),
-		BcryptSalt: os.Getenv("Bcrypt_Salt"),
-	}
-}
-
-func (t *TokenService) GetJWTSecret() string {
-
-	return t.JWTSecret
-}
-
-func (t *TokenService) GetBcryptSalt() string {
-
-	return t.BcryptSalt
-}
-
 type Server struct {
 	port int
 
@@ -43,9 +21,9 @@ type Server struct {
 
 func NewServer() *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	connStr := os.Getenv("DB_URL")
+	// connStr := os.Getenv("DB_URL")
 
-	db, err := sql.Open("pgx", connStr)
+	db, err := sql.Open("pgx", "user=yasid password=password host=localhost port=5432 database=cats_social_db sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
