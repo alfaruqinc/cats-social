@@ -143,6 +143,14 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 					if len(matches) != 3 {
 						continue
 					}
+
+					opr := matches[1]
+					val := matches[2]
+
+					whereClause = append(whereClause, fmt.Sprintf("%s %s $%d", key, opr, len(args)+1))
+					args = append(args, val)
+
+					continue
 				}
 
 				if key == "owned" {
