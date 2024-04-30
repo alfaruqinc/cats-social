@@ -118,7 +118,8 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			for key, value := range queryParams {
 				undefinedParam := slices.Contains(models.CatQueryParams, key) != true
 				limitOffset := key == "limit" || key == "offset"
-				if undefinedParam || limitOffset {
+				emptyValue := len(value[0]) < 1
+				if undefinedParam || limitOffset || emptyValue {
 					continue
 				}
 
@@ -147,7 +148,10 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 				whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
 				args = append(args, value[0])
 			}
-			query += " WHERE " + strings.Join(whereClause, " AND ")
+
+			if len(whereClause) > 0 {
+				query += " WHERE " + strings.Join(whereClause, " AND ")
+			}
 		}
 
 		rows, err := db.Query(query, args...)
