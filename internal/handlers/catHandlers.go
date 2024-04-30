@@ -115,11 +115,12 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		queryParams := c.Request.URL.Query()
 		// TODO: change userId value to loggedin user after auth api finish
 		userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
-		whereClause, args := validateGetAllCatsQueryParams(queryParams, userId)
+		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, userId)
 
 		if len(whereClause) > 0 {
 			query += " WHERE " + strings.Join(whereClause, " AND ")
 		}
+		query += strings.Join(limitOffsetClause, " ")
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
@@ -147,13 +148,29 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]string, []any) {
+func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]string, []string, []any) {
+	var limitOffsetClause []string
 	var whereClause []string
 	var args []any
+
 	for key, value := range queryParams {
 		undefinedParam := slices.Contains(models.CatQueryParams, key) != true
 		limitOffset := key == "limit" || key == "offset"
 		emptyValue := len(value[0]) < 1
+
+		if limitOffset {
+			limitOffsetClause = append(limitOffsetClause, fmt.Sprintf("%s $%d", key, len(args)+1))
+
+			if key == "limit" && emptyValue {
+				value[0] = "5"
+			}
+			if key == "offset" && emptyValue {
+				value[0] = "0"
+			}
+
+			args = append(args, value[0])
+			continue
+		}
 
 		qParamsToSkip := undefinedParam || limitOffset || emptyValue
 		if qParamsToSkip {
@@ -214,5 +231,5 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 		args = append(args, value[0])
 	}
 
-	return whereClause, args
+	return whereClause, limitOffsetClause, args
 }
