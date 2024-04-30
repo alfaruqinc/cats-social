@@ -1,12 +1,18 @@
 package main
 
 import (
-	"cats-social/internal/server"
+	"cats-social/infra/server"
+	"database/sql"
 	"fmt"
 )
 
-func main() {
+type Server struct {
+	port int
 
+	db *sql.DB
+}
+
+func main() {
 	server := server.NewServer()
 
 	err := server.ListenAndServe()
