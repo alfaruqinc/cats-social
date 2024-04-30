@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -136,6 +137,12 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 				if key == "ageInMonth" {
 					key = "age_in_month"
+
+					re := regexp.MustCompile(`([>=<])(\d+)`)
+					matches := re.FindStringSubmatch(value[0])
+					if len(matches) != 3 {
+						continue
+					}
 				}
 
 				if key == "owned" {
@@ -160,7 +167,6 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 				query += " WHERE " + strings.Join(whereClause, " AND ")
 			}
 		}
-		fmt.Println(query)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
