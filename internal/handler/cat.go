@@ -27,7 +27,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		catBody := domain.NewCat()
 		if err := c.ShouldBindJSON(&catBody); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
