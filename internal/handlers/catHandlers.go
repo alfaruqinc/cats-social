@@ -131,7 +131,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 					}
 				}
 
-				if key == "isAlreadyMatched" {
+				if key == "hasMatched" {
 					key = "has_matched"
 				}
 

@@ -52,7 +52,7 @@ var CatQueryParams = []string{
 	"offset",
 	"race",
 	"sex",
-	"isAlreadyMatched",
+	"hasMatched",
 	"ageInMonth",
 	"owned",
 	"search",
