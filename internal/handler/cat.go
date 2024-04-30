@@ -1,7 +1,7 @@
-package handlers
+package handler
 
 import (
-	"cats-social/internal/models"
+	"cats-social/internal/domain"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -24,7 +24,7 @@ type response struct {
 
 func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		catBody := models.NewCat()
+		catBody := domain.NewCat()
 		if err := c.ShouldBindJSON(&catBody); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -36,13 +36,13 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		if slices.Contains(models.CatRace, catBody.Race) != true {
+		if slices.Contains(domain.CatRace, catBody.Race) != true {
 			err := errors.New("accepted race is only Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman")
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if slices.Contains(models.CatSex, catBody.Sex) != true {
+		if slices.Contains(domain.CatSex, catBody.Sex) != true {
 			err := errors.New("accepted sex is only male and female")
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -129,11 +129,11 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		}
 		defer rows.Close()
 
-		cats := []*models.Cat{}
+		cats := []*domain.Cat{}
 		m := pgtype.NewMap()
 
 		for rows.Next() {
-			cat := &models.Cat{}
+			cat := &domain.Cat{}
 
 			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
@@ -154,7 +154,7 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 	var args []any
 
 	for key, value := range queryParams {
-		undefinedParam := slices.Contains(models.CatQueryParams, key) != true
+		undefinedParam := slices.Contains(domain.CatQueryParams, key) != true
 		limitOffset := key == "limit" || key == "offset"
 		emptyValue := len(value[0]) < 1
 

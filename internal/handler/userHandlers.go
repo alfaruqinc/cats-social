@@ -1,7 +1,7 @@
-package handlers
+package handler
 
 import (
-	"cats-social/internal/models"
+	"cats-social/internal/domain"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -17,14 +17,14 @@ type userResponse struct {
 
 func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userBody := models.NewUser()
+		userBody := domain.NewUser()
 
 		if err := ctx.ShouldBindJSON(&userBody); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if userBody.Email == models.NewUser().Email {
+		if userBody.Email == domain.NewUser().Email {
 			err := errors.New("email has been used")
 			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
@@ -54,7 +54,7 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		token, err := models.NewUser().GenerateToken()
+		token, err := domain.NewUser().GenerateToken()
 
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
