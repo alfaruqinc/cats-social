@@ -154,13 +154,22 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 				}
 
 				if key == "owned" {
-					if value[0] != "true" {
+					if value[0] != "true" && value[0] != "false" {
 						continue
 					}
 
 					key = "owned_by"
+					// TODO: change value of userId with user id after auth api finish
+					userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
+
+					if value[0] == "false" {
+						whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
+						args = append(args, userId)
+						continue
+					}
+
 					// TODO: change value of value[0] with user id after auth api finish
-					// value[0] = userId
+					value[0] = "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
 				}
 
 				if key == "search" {
@@ -175,6 +184,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 				query += " WHERE " + strings.Join(whereClause, " AND ")
 			}
 		}
+		fmt.Println(query)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
