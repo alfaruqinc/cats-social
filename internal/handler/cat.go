@@ -2,6 +2,7 @@ package handler
 
 import (
 	"cats-social/internal/domain"
+	"cats-social/internal/repository"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -10,23 +11,17 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type response struct {
-	Id        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
 func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		catBody := domain.NewCat()
 		if err := c.ShouldBindJSON(&catBody); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
@@ -40,21 +35,18 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		parsed, _ := uuid.Parse("e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b")
 		catBody.OwnedBy = parsed
 
-		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls, owned_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		`
-		_, err = db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
+		err = repository.NewCatRepository().CreateCat(db, catBody)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 			return
 		}
 
-		res := &response{
-			Id:        catBody.ID,
+		res := &domain.CreateCatResponse{
+			ID:        catBody.ID,
 			CreatedAt: catBody.CreatedAt,
 		}
 
-		c.JSON(201, gin.H{"message": "success", "data": res})
+		c.JSON(http.StatusCreated, gin.H{"message": "success", "data": res})
 	}
 }
 
