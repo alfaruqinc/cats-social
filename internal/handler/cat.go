@@ -105,7 +105,7 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		var catBody domain.UpdateCatRequest
+		var catBody domain.Cat
 		c.ShouldBindJSON(&catBody)
 
 		updatedAt := time.Now().Format(time.RFC3339)
