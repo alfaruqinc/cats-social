@@ -34,6 +34,18 @@ type CreateCatResponse struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+type CatResponse struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Race        string    `json:"race"`
+	Sex         string    `json:"sex"`
+	AgeInMonth  int32     `json:"ageInMonth"`
+	Description string    `json:"description"`
+	ImageUrls   []string  `json:"imageUrls"`
+	HasMatched  bool      `json:"hasMatched"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
 func NewCat() *Cat {
 	id := uuid.New()
 	createdAt := time.Now().Format(time.RFC3339)
