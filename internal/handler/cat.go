@@ -99,6 +99,11 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		catId := c.Param("catId")
+		parsedCatId, err := uuid.Parse(catId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError("cat is not found"))
+			return
+		}
 
 		var catBody domain.UpdateCatRequest
 		c.ShouldBindJSON(&catBody)
@@ -107,7 +112,7 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 		parsedUpdatedAt, _ := time.Parse(time.RFC3339, updatedAt)
 
 		updatedCat := domain.UpdateCatResponse{
-			ID:        catId,
+			ID:        parsedCatId,
 			UpdatedAt: parsedUpdatedAt,
 		}
 
