@@ -38,12 +38,29 @@ func (t *tokenService) GetBcryptSalt() string {
 	return t.BcryptSalt
 }
 
+type NewUserRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Name     string `json:"name" validate:"required,min=5,max=50"`
+	Password string `json:"password" validate:"required,min=5,max=15"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+type UserResponse struct {
+	Email        string `json:"email"`
+	Name         string `json:"name"`
+	TokenService string `json:"accessToken"`
+}
+
 type User struct {
-	Id           uuid.UUID `json:"id" db:"id"`
-	Email        string    `json:"email" db:"email"`
-	Name         string    `json:"name" db:"name"`
-	Password     string    `json:"password" db:"password"`
-	TokenService TokenService
+	Id           uuid.UUID    `json:"id" db:"id"`
+	Email        string       `json:"email" db:"email" validate:"required,email"`
+	Name         string       `json:"name" db:"name" validate:"required,min=5,max=50"`
+	Password     string       `json:"password" db:"password" validate:"required,min=5,max=15"`
+	TokenService TokenService `json:"accessToken"`
 }
 
 func NewUser() *User {
