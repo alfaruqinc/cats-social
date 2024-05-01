@@ -7,8 +7,8 @@ import (
 )
 
 type CatService interface {
-	CreateCat(cat *domain.Cat) error
-	GetAllCats() ([]domain.Cat, error)
+	CreateCat(db *sql.DB, cat *domain.Cat) error
+	GetAllCats(db *sql.DB) ([]domain.Cat, error)
 }
 
 type catService struct {
@@ -23,10 +23,10 @@ func NewCatService(catRepository repository.CatRepository, db *sql.DB) CatServic
 	}
 }
 
-func (c *catService) CreateCat(cat *domain.Cat) error {
-	return c.catRepository.CreateCat(cat)
+func (c *catService) CreateCat(db *sql.DB, cat *domain.Cat) error {
+	return c.catRepository.CreateCat(db, cat)
 }
 
-func (c *catService) GetAllCats() ([]domain.Cat, error) {
-	return c.catRepository.GetAllCats()
+func (c *catService) GetAllCats(db *sql.DB) ([]domain.Cat, error) {
+	return c.catRepository.GetAllCats(db)
 }

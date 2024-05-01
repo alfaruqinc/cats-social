@@ -2,6 +2,7 @@ package handler
 
 import (
 	"cats-social/internal/domain"
+	"cats-social/internal/repository"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -17,16 +18,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type response struct {
-	Id        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
 func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		catBody := domain.NewCat()
 		if err := c.ShouldBindJSON(&catBody); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
@@ -40,21 +36,18 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 		parsed, _ := uuid.Parse("e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b")
 		catBody.OwnedBy = parsed
 
-		query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls, owned_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		`
-		_, err = db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
+		err = repository.NewCatRepository().CreateCat(db, catBody)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 
-		res := &response{
-			Id:        catBody.ID,
+		res := &domain.CreateCatResponse{
+			ID:        catBody.ID,
 			CreatedAt: catBody.CreatedAt,
 		}
 
-		c.JSON(201, gin.H{"message": "success", "data": res})
+		c.JSON(http.StatusCreated, gin.H{"message": "success", "data": res})
 	}
 }
 
@@ -65,6 +58,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			age_in_month, image_urls, description,
 			created_at, has_matched
 		FROM cats
+		WHERE deleted = false
 		`
 
 		queryParams := c.Request.URL.Query()
@@ -73,14 +67,14 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, userId)
 
 		if len(whereClause) > 0 {
-			query += " WHERE " + strings.Join(whereClause, " AND ")
+			query += "AND " + strings.Join(whereClause, " AND ")
 		}
 		query += strings.Join(limitOffsetClause, " ")
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 		defer rows.Close()
 
@@ -92,14 +86,89 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-				return
+				c.JSON(http.StatusInternalServerError, "something went wrong")
+				panic(err)
 			}
 
 			cats = append(cats, cat)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "success", "data": &cats})
+	}
+}
+
+func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		catId := c.Param("catId")
+		parsedCatId, err := uuid.Parse(catId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError("cat is not found"))
+			return
+		}
+
+		catBody := domain.NewCat()
+		if err := c.ShouldBindJSON(catBody); err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
+			return
+		}
+
+		err = validateRequestBody(*catBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
+			return
+		}
+
+		catBody.ID = parsedCatId
+		catRepo := repository.NewCatRepository()
+
+		err = catRepo.CheckCatIdExists(db, catBody.ID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
+			return
+		}
+
+		err = catRepo.UpdateCat(db, catBody)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
+		}
+
+		updatedAt := time.Now().Format(time.RFC3339)
+		parsedUpdatedAt, _ := time.Parse(time.RFC3339, updatedAt)
+
+		updatedCat := domain.UpdateCatResponse{
+			ID:        parsedCatId,
+			UpdatedAt: parsedUpdatedAt,
+		}
+
+		c.JSON(http.StatusOK, domain.NewStatusOk("success", updatedCat))
+	}
+}
+
+func HandleDeleteCat(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		catId := c.Param("catId")
+		parsedCatId, err := uuid.Parse(catId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError("cat is not found"))
+			return
+		}
+
+		catRepo := repository.NewCatRepository()
+
+		err = catRepo.CheckCatIdExists(db, parsedCatId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
+			return
+		}
+
+		err = catRepo.DeleteCat(db, parsedCatId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
+		}
+
+		c.Status(http.StatusNoContent)
 	}
 }
 

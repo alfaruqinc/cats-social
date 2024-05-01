@@ -11,23 +11,27 @@ type CreateCatRequest struct {
 	Race string `json:"race" validate:"required"`
 }
 
-type Cat struct {
-	ID          uuid.UUID `db:"id"`
-	CreatedAt   time.Time `db:"created_at"`
-	Name        string    `db:"name"`
-	Race        string    `db:"race"`
-	Sex         string    `db:"sex"`
-	AgeInMonth  int32     `db:"age_in_month"`
-	Description string    `db:"description"`
-	ImageUrls   []string  `db:"image_urls"`
-	HasMatched  bool      `db:"has_matched"`
-	OwnedBy     uuid.UUID `db:"owned_by"`
+type UpdateCatResponse struct {
+	ID        uuid.UUID `json:"id"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-type CatResponse struct {
+type Cat struct {
+	ID          uuid.UUID `json:"id" db:"id"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+	Name        string    `json:"name" db:"name"`
+	Race        string    `json:"race" db:"race"`
+	Sex         string    `json:"sex" db:"sex"`
+	AgeInMonth  int32     `json:"ageInMonth" db:"age_in_month"`
+	Description string    `json:"description" db:"description"`
+	ImageUrls   []string  `json:"imageUrls" db:"image_urls"`
+	HasMatched  bool      `json:"has_matched" db:"has_matched"`
+	OwnedBy     uuid.UUID `json:"-" db:"owned_by"`
+}
+
+type CreateCatResponse struct {
 	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
-	Name      string    `json:"name"`
 }
 
 func NewCat() *Cat {

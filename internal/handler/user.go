@@ -12,8 +12,8 @@ import (
 )
 
 type userResponse struct {
-	Email       string `json:"email"`
-	Name        string `json:"name"`
+	Email       string `json:"email" binding:"required,email"`
+	Name        string `json:"name" binding:"required"`
 	AccessToken string `json:"accessToken"`
 }
 
@@ -38,16 +38,15 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 		VALUES ($1, $2, $3, $4)`
 
 		_, err = db.Exec(query, userBody.Id, userBody.Name, userBody.Email, userBody.Password)
-
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			ctx.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 
 		token, err := domain.NewUser().GenerateToken()
-
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
+			ctx.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 
 		res := &userResponse{
