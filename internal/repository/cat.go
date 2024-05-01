@@ -8,6 +8,7 @@ import (
 type CatRepository interface {
 	CreateCat(db *sql.DB, cat *domain.Cat) error
 	GetAllCats(db *sql.DB) ([]domain.Cat, error)
+	UpdateCat(db *sql.DB, cat *domain.Cat) error
 }
 
 type CatRepositoryImpl struct{}
@@ -30,4 +31,23 @@ func (c *CatRepositoryImpl) CreateCat(db *sql.DB, catBody *domain.Cat) error {
 
 func (c *CatRepositoryImpl) GetAllCats(db *sql.DB) ([]domain.Cat, error) {
 	return nil, nil
+}
+
+func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
+	query := `
+		UPDATE cats
+		SET name = $2,
+			race = $3,
+			sex = $4,
+			age_in_month = $5,
+			description = $6,
+			image_urls = $7
+		WHERE id = $1
+	`
+	_, err := db.Exec(query, cat.ID, cat.Name, cat.Race, cat.Sex, cat.AgeInMonth, cat.Description, cat.ImageUrls)
+	if err != nil {
+		return domain.NewInternalServerError(err.Error())
+	}
+
+	return nil
 }
