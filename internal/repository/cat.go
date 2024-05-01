@@ -59,11 +59,12 @@ func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 
 func (c *CatRepositoryImpl) DeleteCat(db *sql.DB, catId uuid.UUID) error {
 	query := `
-		DELETE FROM cats
+		UPDATE cats
+		SET deleted = $2
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(query, catId)
+	_, err := db.Exec(query, catId, true)
 	if err != nil {
 		return err
 	}
