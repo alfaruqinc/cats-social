@@ -13,6 +13,7 @@ type CatRepository interface {
 	GetAllCats(db *sql.DB) ([]domain.Cat, error)
 	UpdateCat(db *sql.DB, cat *domain.Cat) error
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID) error
+	DeleteCat(db *sql.DB, catId uuid.UUID) error
 }
 
 type CatRepositoryImpl struct{}
@@ -49,6 +50,20 @@ func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 		WHERE id = $1
 	`
 	_, err := db.Exec(query, cat.ID, cat.Name, cat.Race, cat.Sex, cat.AgeInMonth, cat.Description, cat.ImageUrls)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *CatRepositoryImpl) DeleteCat(db *sql.DB, catId uuid.UUID) error {
+	query := `
+		DELETE FROM cats
+		WHERE id = $1
+	`
+
+	_, err := db.Exec(query, catId)
 	if err != nil {
 		return err
 	}
