@@ -105,10 +105,13 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		var catBody domain.Cat
-		c.ShouldBindJSON(&catBody)
+		catBody := domain.NewCat()
+		if err := c.ShouldBindJSON(catBody); err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
+			return
+		}
 
-		err = validateRequestBody(catBody)
+		err = validateRequestBody(*catBody)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
