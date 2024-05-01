@@ -20,6 +20,11 @@ type UpdateCatRequest struct {
 	ImageUrls   []string `json:"imageUrls" db:"image_urls"`
 }
 
+type UpdateCatResponse struct {
+	ID        string    `json:"id"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
 type Cat struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
