@@ -58,6 +58,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			age_in_month, image_urls, description,
 			created_at, has_matched
 		FROM cats
+		WHERE deleted = false
 		`
 
 		queryParams := c.Request.URL.Query()
@@ -66,7 +67,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, userId)
 
 		if len(whereClause) > 0 {
-			query += " WHERE " + strings.Join(whereClause, " AND ")
+			query += "AND " + strings.Join(whereClause, " AND ")
 		}
 		query += strings.Join(limitOffsetClause, " ")
 
