@@ -117,6 +117,13 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		catBody.ID = parsedCatId
+		err = repository.NewCatRepository().UpdateCat(db, catBody)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
+			return
+		}
+
 		updatedAt := time.Now().Format(time.RFC3339)
 		parsedUpdatedAt, _ := time.Parse(time.RFC3339, updatedAt)
 
