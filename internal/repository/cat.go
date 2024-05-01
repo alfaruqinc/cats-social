@@ -3,12 +3,16 @@ package repository
 import (
 	"cats-social/internal/domain"
 	"database/sql"
+	"errors"
+
+	"github.com/google/uuid"
 )
 
 type CatRepository interface {
 	CreateCat(db *sql.DB, cat *domain.Cat) error
 	GetAllCats(db *sql.DB) ([]domain.Cat, error)
 	UpdateCat(db *sql.DB, cat *domain.Cat) error
+	CheckCatIdExists(db *sql.DB, catId uuid.UUID) error
 }
 
 type CatRepositoryImpl struct{}
@@ -47,6 +51,28 @@ func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 	_, err := db.Exec(query, cat.ID, cat.Name, cat.Race, cat.Sex, cat.AgeInMonth, cat.Description, cat.ImageUrls)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *CatRepositoryImpl) CheckCatIdExists(db *sql.DB, catId uuid.UUID) error {
+	queryCheckCatId := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM cats
+			WHERE id = $1
+		)
+	`
+	var catIdExists bool
+	row := db.QueryRow(queryCheckCatId, catId)
+	err := row.Scan(&catIdExists)
+	if err != nil {
+		return err
+	}
+
+	if !catIdExists {
+		return errors.New("cat is not found")
 	}
 
 	return nil
