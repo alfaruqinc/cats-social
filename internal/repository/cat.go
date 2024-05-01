@@ -60,11 +60,11 @@ func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 func (c *CatRepositoryImpl) DeleteCat(db *sql.DB, catId uuid.UUID) error {
 	query := `
 		UPDATE cats
-		SET deleted = $2
+		SET deleted = true
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(query, catId, true)
+	_, err := db.Exec(query, catId)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (c *CatRepositoryImpl) CheckCatIdExists(db *sql.DB, catId uuid.UUID) error 
 		SELECT EXISTS (
 			SELECT 1
 			FROM cats
-			WHERE id = $1
+			WHERE id = $1 AND deleted = false
 		)
 	`
 	var catIdExists bool
