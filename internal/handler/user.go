@@ -4,7 +4,6 @@ import (
 	"cats-social/internal/domain"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -68,29 +67,33 @@ func HandleLogin(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		var user domain.User
-
-		row := db.QueryRow(`SELECT id, name, email, password FROM users WHERE email = $1`, userBody.Email)
-		err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password)
+		err := validateLoginUser(*userBody)
 
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Invalid email or password"))
-				return
-			}
-			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
+		var exists bool
+
+		db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, userBody.Email).Scan(&exists)
+
+		if !exists {
+			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("email has been used"))
+			return
+		}
+
+		var user domain.User
+
 		if !user.ComparePassword(userBody.Password) {
-			ctx.JSON(http.StatusUnauthorized, domain.NewUnauthorizedError("Invalid email or password"))
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Invalid email or password"))
 			return
 		}
 
 		token, err := domain.NewUser().GenerateToken()
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			panic(err)
 		}
 
 		res := &userResponse{
@@ -100,8 +103,20 @@ func HandleLogin(db *sql.DB) gin.HandlerFunc {
 		}
 
 		ctx.JSON(http.StatusOK, domain.NewStatusOk("User Logged Successfully", res))
-		fmt.Print(res)
 	}
+}
+
+func validateLoginUser(user domain.User) error {
+	if len(user.Email) < 1 {
+		err := errors.New("email not be empty")
+		return err
+	}
+
+	if !validEmail(user.Email) {
+		err := errors.New("invalid email format")
+		return err
+	}
+	return nil
 }
 
 func ValidateUserRequest(userBody domain.User, db *sql.DB) error {
