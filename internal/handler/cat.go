@@ -118,7 +118,15 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 		}
 
 		catBody.ID = parsedCatId
-		err = repository.NewCatRepository().UpdateCat(db, catBody)
+		catRepo := repository.NewCatRepository()
+
+		err = catRepo.CheckCatIdExists(db, catBody.ID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
+			return
+		}
+
+		err = catRepo.UpdateCat(db, catBody)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 			return
