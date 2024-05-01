@@ -21,7 +21,7 @@ type UpdateCatRequest struct {
 }
 
 type UpdateCatResponse struct {
-	ID        string    `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
