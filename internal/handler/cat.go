@@ -144,6 +144,33 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
+func HandleDeleteCat(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		catId := c.Param("catId")
+		parsedCatId, err := uuid.Parse(catId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError("cat is not found"))
+			return
+		}
+
+		catRepo := repository.NewCatRepository()
+
+		err = catRepo.CheckCatIdExists(db, parsedCatId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
+			return
+		}
+
+		err = catRepo.DeleteCat(db, parsedCatId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
+		}
+
+		c.Status(http.StatusNoContent)
+	}
+}
+
 func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]string, []string, []any) {
 	var limitOffsetClause []string
 	var whereClause []string
