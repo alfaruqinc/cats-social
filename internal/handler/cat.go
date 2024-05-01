@@ -105,8 +105,24 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		var catBody domain.UpdateCatRequest
-		c.ShouldBindJSON(&catBody)
+		catBody := domain.NewCat()
+		if err := c.ShouldBindJSON(catBody); err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
+			return
+		}
+
+		err = validateRequestBody(*catBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
+			return
+		}
+
+		catBody.ID = parsedCatId
+		err = repository.NewCatRepository().UpdateCat(db, catBody)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
+			return
+		}
 
 		updatedAt := time.Now().Format(time.RFC3339)
 		parsedUpdatedAt, _ := time.Parse(time.RFC3339, updatedAt)
