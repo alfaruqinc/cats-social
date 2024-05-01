@@ -23,7 +23,7 @@ func (c *CatRepositoryImpl) CreateCat(db *sql.DB, catBody *domain.Cat) error {
 		`
 	_, err := db.Exec(query, catBody.ID, catBody.CreatedAt, catBody.Name, catBody.Race, catBody.Sex, catBody.AgeInMonth, catBody.Description, catBody.ImageUrls, catBody.OwnedBy)
 	if err != nil {
-		return domain.NewInternalServerError(err.Error())
+		return err
 	}
 
 	return nil
@@ -46,7 +46,7 @@ func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 	`
 	_, err := db.Exec(query, cat.ID, cat.Name, cat.Race, cat.Sex, cat.AgeInMonth, cat.Description, cat.ImageUrls)
 	if err != nil {
-		return domain.NewInternalServerError(err.Error())
+		return err
 	}
 
 	return nil
