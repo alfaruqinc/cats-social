@@ -11,6 +11,20 @@ type CreateCatRequest struct {
 	Race string `json:"race" validate:"required"`
 }
 
+type UpdateCatRequest struct {
+	Name        string   `json:"name" db:"name"`
+	Race        string   `json:"race" db:"race"`
+	Sex         string   `json:"sex" db:"sex"`
+	AgeInMonth  int32    `json:"ageInMonth" db:"age_in_month"`
+	Description string   `json:"description" db:"description"`
+	ImageUrls   []string `json:"imageUrls" db:"image_urls"`
+}
+
+type UpdateCatResponse struct {
+	ID        uuid.UUID `json:"id"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
 type Cat struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	CreatedAt   time.Time `json:"createdAt" db:"created_at"`

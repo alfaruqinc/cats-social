@@ -21,6 +21,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	cat := apiV1.Group("/cat")
 	cat.GET("", handler.HandleGetAllCats(s.db))
 	cat.POST("", handler.HandleAddNewCat(s.db))
+	cat.PUT(":catId", handler.HandleUpdateCat(s.db))
 
 	// cat match
 	catMatch := cat.Group("/match")
