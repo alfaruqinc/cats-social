@@ -16,6 +16,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// user
 	user := apiV1.Group("/user")
 	user.POST("/register", handler.HandleNewUser(s.db))
+	user.POST("/login", handler.HandleLogin(s.db))
 
 	// cat
 	cat := apiV1.Group("/cat")
