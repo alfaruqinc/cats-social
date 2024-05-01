@@ -38,8 +38,8 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 		err = repository.NewCatRepository().CreateCat(db, catBody)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 
 		res := &domain.CreateCatResponse{
@@ -72,8 +72,8 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 		defer rows.Close()
 
@@ -85,8 +85,8 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 
 			err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-				return
+				c.JSON(http.StatusInternalServerError, "something went wrong")
+				panic(err)
 			}
 
 			cats = append(cats, cat)
@@ -128,8 +128,8 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 
 		err = catRepo.UpdateCat(db, catBody)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
-			return
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
 		}
 
 		updatedAt := time.Now().Format(time.RFC3339)
