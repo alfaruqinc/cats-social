@@ -58,6 +58,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			age_in_month, image_urls, description,
 			created_at, has_matched
 		FROM cats
+		WHERE deleted = false
 		`
 
 		queryParams := c.Request.URL.Query()
@@ -66,7 +67,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, userId)
 
 		if len(whereClause) > 0 {
-			query += " WHERE " + strings.Join(whereClause, " AND ")
+			query += "AND " + strings.Join(whereClause, " AND ")
 		}
 		query += strings.Join(limitOffsetClause, " ")
 
@@ -141,6 +142,33 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, domain.NewStatusOk("success", updatedCat))
+	}
+}
+
+func HandleDeleteCat(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		catId := c.Param("catId")
+		parsedCatId, err := uuid.Parse(catId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError("cat is not found"))
+			return
+		}
+
+		catRepo := repository.NewCatRepository()
+
+		err = catRepo.CheckCatIdExists(db, parsedCatId)
+		if err != nil {
+			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
+			return
+		}
+
+		err = catRepo.DeleteCat(db, parsedCatId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, "something went wrong")
+			panic(err)
+		}
+
+		c.Status(http.StatusNoContent)
 	}
 }
 

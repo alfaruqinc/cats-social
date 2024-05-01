@@ -1,0 +1,2 @@
+ALTER TABLE cats
+DROP COLUMN IF EXISTS deleted;
