@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -92,6 +93,25 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "success", "data": &cats})
+	}
+}
+
+func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		catId := c.Param("catId")
+
+		var catBody domain.UpdateCatRequest
+		c.ShouldBindJSON(&catBody)
+
+		updatedAt := time.Now().Format(time.RFC3339)
+		parsedUpdatedAt, _ := time.Parse(time.RFC3339, updatedAt)
+
+		updatedCat := domain.UpdateCatResponse{
+			ID:        catId,
+			UpdatedAt: parsedUpdatedAt,
+		}
+
+		c.JSON(http.StatusOK, domain.NewStatusOk("success", updatedCat))
 	}
 }
 
