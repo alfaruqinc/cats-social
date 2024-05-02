@@ -2,12 +2,20 @@ package server
 
 import (
 	"cats-social/internal/handler"
+	"cats-social/internal/repository"
+	"cats-social/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
+
+	// dependency injection
+	catMatchRepository := repository.NewCatMatchRepository()
+	catMatchService := service.NewCatMatchService(catMatchRepository, s.db)
+	catMatchHandler := handler.NewCatMatchHandler(catMatchService)
+
 	r := gin.Default()
 
 	// version 1
@@ -27,6 +35,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// cat match
 	catMatch := cat.Group("/match")
+	catMatch.POST("", catMatchHandler.CreateCatMatch())
 	catMatch.GET("", func(c *gin.Context) { c.String(200, "HALO CAT MATCH") })
 
 	return r
