@@ -2,6 +2,7 @@ package handler
 
 import (
 	"cats-social/internal/service"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,8 +27,17 @@ func NewCatMatchHandler(catMatchService service.CatMatchService) CatMatchHandler
 
 func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "Create Cat Match",
+		result, err := c.catMatchService.CreateCatMatch(ctx, nil)
+		if err != nil {
+			ctx.JSON(err.Status(), gin.H{
+				"message": err.Message(),
+			})
+
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{
+			"message": result,
 		})
 	}
 }

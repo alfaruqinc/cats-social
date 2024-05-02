@@ -6,6 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	CatMatchStatusPending  = "pending"
+	CatMatchStatusAccepted = "accepted"
+	CatMatchStatusRejected = "rejected"
+)
+
+var (
+	CatMatchStatuses = []string{
+		CatMatchStatusPending,
+		CatMatchStatusAccepted,
+		CatMatchStatusRejected,
+	}
+)
+
 type CreateCatMatchRequest struct {
 	UserCatID  uuid.UUID `json:"userCatId" validate:"required"`
 	MatchCatID uuid.UUID `json:"matchCatId" validate:"required"`
@@ -22,6 +36,7 @@ type CatMatch struct {
 	UserCatID  uuid.UUID `db:"user_cat_id"`
 	UserCat    Cat
 	Message    string
+	Status     string
 }
 
 type CatMatchResponse struct {
