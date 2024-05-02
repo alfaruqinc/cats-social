@@ -190,6 +190,9 @@ func (c *catMatchRepository) CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, 
 	var canDelete bool
 	err := tx.QueryRowContext(ctx, query, id, userId).Scan(&canDelete)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
 		return false, err
 	}
 
