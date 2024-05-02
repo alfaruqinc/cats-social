@@ -106,6 +106,15 @@ func (c *catMatchService) DeleteCatMatch(ctx context.Context, id string) domain.
 	}
 	defer tx.Rollback()
 
+	status, err := c.catMatchRepository.GetStatusCatMatch(ctx, tx, id)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+
+	if status != "waiting" {
+		return domain.NewBadRequest("Cannot delete non waiting cat match request")
+	}
+
 	err = c.catMatchRepository.DeleteCatMatch(ctx, tx, id)
 	if err != nil {
 		return domain.NewBadRequest("Failed to create cat match")
