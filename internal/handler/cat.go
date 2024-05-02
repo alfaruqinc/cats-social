@@ -59,6 +59,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			created_at, has_matched
 		FROM cats
 		WHERE deleted = false
+		ORDER BY created_at DESC
 		`
 
 		queryParams := c.Request.URL.Query()
@@ -124,6 +125,12 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 		err = catRepo.CheckCatIdExists(db, catBody.ID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
+			return
+		}
+
+		err = catRepo.CheckEditableSex(db, catBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
