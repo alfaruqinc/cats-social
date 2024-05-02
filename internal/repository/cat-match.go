@@ -14,7 +14,7 @@ type CatMatchRepository interface {
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, tx *sql.Tx, id string) ([]domain.CatMatch, error)
 	UpdateCatMatchByID(ctx context.Context, tx *sql.Tx, id string, catMatch *domain.CatMatch) error
 	DeleteCatMatch(ctx context.Context, tx *sql.Tx, id string) error
-	GetStatusCatMatch(ctx context.Context, tx *sql.Tx, id string) (string, error)
+	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
 	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
 
@@ -172,7 +172,7 @@ func (c *catMatchRepository) DeleteCatMatch(ctx context.Context, tx *sql.Tx, id 
 	return nil
 }
 
-func (c *catMatchRepository) GetStatusCatMatch(ctx context.Context, tx *sql.Tx, id string) (string, error) {
+func (c *catMatchRepository) GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error) {
 	query := `SELECT status FROM cat_matches WHERE id = $1`
 
 	var status string

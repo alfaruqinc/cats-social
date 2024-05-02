@@ -118,7 +118,7 @@ func (c *catMatchService) DeleteCatMatch(ctx context.Context, id string) domain.
 		return domain.NewNotFoundError("Cat match request is not found")
 	}
 
-	status, err := c.catMatchRepository.GetStatusCatMatch(ctx, tx, id)
+	status, err := c.catMatchRepository.GetStatusCatMatchByID(ctx, tx, id)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
 	}
