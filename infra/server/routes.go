@@ -38,6 +38,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	catMatch := cat.Group("/match")
 	catMatch.POST("", catMatchHandler.CreateCatMatch())
 	catMatch.GET("", catMatchHandler.GetCatMatchesByIssuerOrReceiverID())
+	catMatch.DELETE(":id", catMatchHandler.DeleteCatMatch())
 
 	return r
 }

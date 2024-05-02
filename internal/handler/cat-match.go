@@ -70,8 +70,15 @@ func (c *catMatchHandler) UpdateCatMatchByID() gin.HandlerFunc {
 
 func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		catMatchId := ctx.Param("id")
+
+		err := c.catMatchService.DeleteCatMatch(ctx, catMatchId)
+		if err != nil {
+			ctx.JSON(err.Status(), err.Message())
+		}
+
 		ctx.JSON(200, gin.H{
-			"message": "Delete Cat Match",
+			"message": "success delete cat match request",
 		})
 	}
 }

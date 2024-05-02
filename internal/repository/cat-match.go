@@ -16,8 +16,7 @@ type CatMatchRepository interface {
 	DeleteCatMatch(ctx context.Context, tx *sql.Tx, id string) error
 }
 
-type catMatchRepository struct {
-}
+type catMatchRepository struct{}
 
 func NewCatMatchRepository() CatMatchRepository {
 	return &catMatchRepository{}

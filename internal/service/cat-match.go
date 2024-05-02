@@ -100,5 +100,21 @@ func (c *catMatchService) UpdateCatMatchByID(ctx context.Context, id string, cat
 }
 
 func (c *catMatchService) DeleteCatMatch(ctx context.Context, id string) domain.MessageErr {
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.NewInternalServerError("Failed to start transaction")
+	}
+	defer tx.Rollback()
+
+	err = c.catMatchRepository.DeleteCatMatch(ctx, tx, id)
+	if err != nil {
+		return domain.NewBadRequest("Failed to create cat match")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return domain.NewInternalServerError("Failed to commit transaction")
+	}
+
 	return nil
 }
