@@ -127,6 +127,12 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		err = catRepo.CheckEditableSex(db, catBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
+			return
+		}
+
 		err = catRepo.UpdateCat(db, catBody)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, "something went wrong")
