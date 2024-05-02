@@ -100,9 +100,9 @@ func (u *User) ComparePassword(password string) bool {
 
 func (u *User) GenerateToken() (string, error) {
 	claims := jwt.MapClaims{
-		"id":   u.Id,
-		"name": u.Name,
-		"exp":  time.Now().Add(time.Hour * 8).Unix(),
+		"id":    u.Id,
+		"email": u.Email,
+		"exp":   time.Now().Add(time.Hour * 8).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(u.TokenService.GetJWTSecret()))
