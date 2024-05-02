@@ -13,8 +13,7 @@ type UserRepository interface {
 	GetByEmail(db *sql.DB, userEmail string) (*domain.User, error)
 }
 
-type userImpl struct {
-}
+type userImpl struct{}
 
 func NewUserPg() UserRepository {
 	return &userImpl{}
