@@ -29,12 +29,10 @@ func NewTokenService() TokenService {
 }
 
 func (t *tokenService) GetJWTSecret() string {
-
 	return t.JWTSecret
 }
 
 func (t *tokenService) GetBcryptSalt() string {
-
 	return t.BcryptSalt
 }
 
@@ -78,13 +76,11 @@ var invalidTokenErr = NewUnauthenticatedError("invalid token")
 
 func (u *User) HashPassword() MessageErr {
 	salt, err := strconv.Atoi(u.TokenService.GetBcryptSalt())
-
 	if err != nil {
 		return NewInternalServerError("SOMETHING WENT WRONG")
 	}
 
 	bs, err := bcrypt.GenerateFromPassword([]byte(u.Password), salt)
-
 	if err != nil {
 		return NewInternalServerError("SOMETHING WENT WRONG")
 	}
@@ -120,9 +116,7 @@ func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
 
 		return []byte(u.TokenService.GetJWTSecret()), nil
 	})
-
 	if err != nil {
-
 		return nil, invalidTokenErr
 	}
 
@@ -130,7 +124,6 @@ func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
 }
 
 func (u *User) bindTokenToUserEntity(claim jwt.MapClaims) MessageErr {
-
 	idString, ok := claim["id"].(string)
 	if !ok {
 		return invalidTokenErr
@@ -168,7 +161,6 @@ func (u *User) ValidateToken(bearerToken string) error {
 	tokenString := splitToken[1]
 
 	token, err := u.parseToken(tokenString)
-
 	if err != nil {
 		return err
 	}
@@ -181,7 +173,6 @@ func (u *User) ValidateToken(bearerToken string) error {
 		mapClaims = claims
 	}
 	err = u.bindTokenToUserEntity(mapClaims)
-
 	if err != nil {
 		return err
 	}

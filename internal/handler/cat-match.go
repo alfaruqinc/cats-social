@@ -1,17 +1,19 @@
 package handler
 
 import (
+	"cats-social/internal/domain"
 	"cats-social/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type CatMatchHandler interface {
 	CreateCatMatch() gin.HandlerFunc
 	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
 	UpdateCatMatchByID() gin.HandlerFunc
-	DeleteCatMatch() gin.HandlerFunc
+	DeleteCatMatchByID() gin.HandlerFunc
 }
 
 type catMatchHandler struct {
@@ -68,10 +70,26 @@ func (c *catMatchHandler) UpdateCatMatchByID() gin.HandlerFunc {
 	}
 }
 
-func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
+func (c *catMatchHandler) DeleteCatMatchByID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		catMatchId := ctx.Param("id")
+
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		_, err := uuid.Parse(catMatchId)
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
+		}
+
+		err = c.catMatchService.DeleteCatMatchByID(ctx, catMatchId, user.Id.String())
+		if err, ok := err.(domain.MessageErr); ok {
+			ctx.JSON(err.Status(), err)
+			return
+		}
+
 		ctx.JSON(200, gin.H{
-			"message": "Delete Cat Match",
+			"message": "success delete cat match request",
 		})
 	}
 }
