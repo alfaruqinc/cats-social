@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"cats-social/internal/domain"
 	"cats-social/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type CatMatchHandler interface {
@@ -72,9 +74,15 @@ func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		catMatchId := ctx.Param("id")
 
-		err := c.catMatchService.DeleteCatMatch(ctx, catMatchId)
+		_, err := uuid.Parse(catMatchId)
 		if err != nil {
+			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
+		}
+
+		err = c.catMatchService.DeleteCatMatch(ctx, catMatchId)
+		if err, ok := err.(domain.MessageErr); ok {
 			ctx.JSON(err.Status(), err.Message())
+			return
 		}
 
 		ctx.JSON(200, gin.H{
