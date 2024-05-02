@@ -92,6 +92,7 @@ func (u *User) HashPassword() MessageErr {
 
 	return nil
 }
+
 func (u *User) ComparePassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	return err == nil
@@ -148,7 +149,7 @@ func (u *User) bindTokenToUserEntity(claim jwt.MapClaims) MessageErr {
 	return nil
 }
 
-func (u *User) ValidateToken(bearerToken string) MessageErr {
+func (u *User) ValidateToken(bearerToken string) error {
 	isBearer := strings.HasPrefix(bearerToken, "Bearer")
 
 	if !isBearer {

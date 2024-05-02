@@ -3,24 +3,29 @@ package service
 import (
 	"cats-social/internal/domain"
 	"cats-social/internal/repository"
+	"database/sql"
 )
 
 type UserService interface {
-	Register(userPayload *domain.User) (*domain.UserResponse, domain.MessageErr)
-	Login(userPayload *domain.User) (*domain.UserResponse, domain.MessageErr)
+	Register(db *sql.DB, user *domain.User) error
+	Login(db *sql.DB, user *domain.User) error
 }
 
 type userService struct {
+	db *sql.DB
 	ur repository.UserRepository
 }
 
-func NewUserService(ur repository.UserRepository) userService {
-	return userService{ur: ur}
+func NewUserService(ur repository.UserRepository, db *sql.DB) userService {
+	return userService{
+		ur: ur,
+		db: db,
+	}
 }
 
-func (us *userService) Register(userPayload *domain.User) (*domain.UserResponse, domain.MessageErr) {
-	return us.ur.CreateNewUser(userPayload)
+func (us *userService) Register(db *sql.DB, user *domain.User) error {
+	return us.ur.CreateNewUser(db, user)
 }
-func (us *userService) Login(userPayload *domain.User) (*domain.UserResponse, domain.MessageErr) {
-	return us.ur.CreateNewUser(userPayload)
+func (us *userService) Login(db *sql.DB, user *domain.User) error {
+	return us.ur.CreateNewUser(db, user)
 }

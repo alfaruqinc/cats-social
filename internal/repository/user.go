@@ -3,33 +3,73 @@ package repository
 import (
 	"cats-social/internal/domain"
 	"database/sql"
+	"errors"
 
 	"github.com/google/uuid"
 )
 
 type UserRepository interface {
-	CreateNewUser(userPayload *domain.User) (*domain.UserResponse, domain.MessageErr)
-	GetById(userId uuid.UUID) (*domain.User, domain.MessageErr)
-	GetByEmail(userEmail string) (*domain.User, domain.MessageErr)
+	CreateNewUser(db *sql.DB, userPayload *domain.User) error
+	GetById(db *sql.DB, userId uuid.UUID) error
+	GetByEmail(db *sql.DB, userEmail string) error
 }
 
 type userImpl struct {
-	db *sql.DB
 }
 
-func NewUserPg(db *sql.DB) UserRepository {
+func NewUserPg() UserRepository {
 	return &userImpl{}
 }
 
-func (u *userImpl) CreateNewUser(userPayload *domain.User) (*domain.UserResponse, domain.MessageErr) {
-	return nil, nil
+func (u *userImpl) CreateNewUser(db *sql.DB, userPayload *domain.User) error {
+	query := `INSERT INTO users (id, name, email, password)
+		VALUES ($1, $2, $3, $4)`
+
+	_, err := db.Exec(query, userPayload.Id, userPayload.Name, userPayload.Email, userPayload.Password)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (u *userImpl) GetById(userId uuid.UUID) (*domain.User, domain.MessageErr) {
-	return nil, nil
+func (u *userImpl) GetById(db *sql.DB, userId uuid.UUID) error {
+	query := `SELECT EXISTS(
+		SELECT 1
+		FROM users
+		WHERE id = $1
+		)
+	`
+	var idExists bool
+	err := db.QueryRow(query, userId).Scan(&idExists)
+	if err != nil {
+		return err
+	}
+
+	if !idExists {
+		return errors.New("userId is not found")
+	}
+
+	return nil
 }
 
-func (u *userImpl) GetByEmail(userEmail string) (*domain.User, domain.MessageErr) {
+func (u *userImpl) GetByEmail(db *sql.DB, userEmail string) error {
+	query := `SELECT EXISTS(
+		SELECT 1 
+		FROM users 
+		WHERE email = $1
+		)
+	`
 
-	return nil, nil
+	var exists bool
+	err := db.QueryRow(query, userEmail).Scan(&exists, &domain.NewUser().Password)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+
+		return errors.New("user not found")
+	}
+
+	return nil
 }
