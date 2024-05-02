@@ -1,7 +1,9 @@
 package server
 
 import (
+	"cats-social/internal/auth"
 	"cats-social/internal/handler"
+	"cats-social/internal/repository"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +22,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// cat
 	cat := apiV1.Group("/cat")
+	cat.Use(auth.NewAuth(repository.NewUserPg()).Authentication(s.db))
 	cat.GET("", handler.HandleGetAllCats(s.db))
 	cat.POST("", handler.HandleAddNewCat(s.db))
 	cat.PUT(":catId", handler.HandleUpdateCat(s.db))

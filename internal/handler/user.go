@@ -40,7 +40,7 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 			panic(err)
 		}
 
-		token, err := domain.NewUser().GenerateToken()
+		token, err := userBody.GenerateToken()
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, "something went wrong")
 			panic(err)
@@ -71,28 +71,27 @@ func HandleLogin(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		err = repository.NewUserPg().GetByEmail(db, userBody.Email)
+		user, err := repository.NewUserPg().GetByEmail(db, userBody.Email)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("email has been used"))
 			return
 		}
 
-		user := domain.User{}
 		isValidPassword := user.ComparePassword(userBody.Password)
 		if !isValidPassword {
 			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("invalid email or password"))
 			return
 		}
 
-		token, err := domain.NewUser().GenerateToken()
+		token, err := userBody.GenerateToken()
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 			panic(err)
 		}
 
 		res := &userResponse{
-			Email:       userBody.Email,
-			Name:        userBody.Name,
+			Email:       user.Email,
+			Name:        user.Name,
 			AccessToken: token,
 		}
 
@@ -128,11 +127,6 @@ func ValidateUserRequest(userBody domain.User, db *sql.DB) error {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", userBody.Email)
 	if err := row.Scan(&count); err != nil {
-		return err
-	}
-
-	if count > 0 {
-		err := domain.NewConflictError("email has been used")
 		return err
 	}
 

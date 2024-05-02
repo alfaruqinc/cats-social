@@ -3,15 +3,14 @@ package repository
 import (
 	"cats-social/internal/domain"
 	"database/sql"
-	"errors"
 
 	"github.com/google/uuid"
 )
 
 type UserRepository interface {
 	CreateNewUser(db *sql.DB, userPayload *domain.User) error
-	GetById(db *sql.DB, userId uuid.UUID) error
-	GetByEmail(db *sql.DB, userEmail string) error
+	GetById(db *sql.DB, userId uuid.UUID) (*domain.User, error)
+	GetByEmail(db *sql.DB, userEmail string) (*domain.User, error)
 }
 
 type userImpl struct {
@@ -32,44 +31,30 @@ func (u *userImpl) CreateNewUser(db *sql.DB, userPayload *domain.User) error {
 	return nil
 }
 
-func (u *userImpl) GetById(db *sql.DB, userId uuid.UUID) error {
-	query := `SELECT EXISTS(
-		SELECT 1
-		FROM users
-		WHERE id = $1
-		)
+func (u *userImpl) GetById(db *sql.DB, userId uuid.UUID) (*domain.User, error) {
+	query := `SELECT id, email, name, password
+		FROM users WHERE id = $1
 	`
-	var idExists bool
-	err := db.QueryRow(query, userId).Scan(&idExists)
+	user := domain.User{}
+
+	err := db.QueryRow(query, userId).Scan(&user.Id, &user.Email, &user.Name, &user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if !idExists {
-		return errors.New("userId is not found")
-	}
-
-	return nil
+	return &user, nil
 }
 
-func (u *userImpl) GetByEmail(db *sql.DB, userEmail string) error {
-	query := `SELECT EXISTS(
-		SELECT 1 
-		FROM users 
-		WHERE email = $1
-		)
+func (u *userImpl) GetByEmail(db *sql.DB, userEmail string) (*domain.User, error) {
+	query := `SELECT id, email, name, password
+		FROM users WHERE email = $1
 	`
+	user := domain.User{}
 
-	var exists bool
-	err := db.QueryRow(query, userEmail).Scan(&exists, &domain.NewUser().Password)
+	err := db.QueryRow(query, userEmail).Scan(&user.Id, &user.Email, &user.Name, &user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if !exists {
-
-		return errors.New("user not found")
-	}
-
-	return nil
+	return &user, nil
 }

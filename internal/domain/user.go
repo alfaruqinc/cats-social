@@ -21,7 +21,7 @@ type tokenService struct {
 	BcryptSalt string
 }
 
-func NewTokenService() *tokenService {
+func NewTokenService() TokenService {
 	return &tokenService{
 		JWTSecret:  os.Getenv("JWT_SECRET"),
 		BcryptSalt: os.Getenv("BCRYPT_SALT"),
@@ -100,28 +100,24 @@ func (u *User) ComparePassword(password string) bool {
 
 func (u *User) GenerateToken() (string, error) {
 	claims := jwt.MapClaims{
-		"id":    u.Id,
+		"id":    u.Id.String(),
 		"email": u.Email,
 		"exp":   time.Now().Add(time.Hour * 8).Unix(),
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(u.TokenService.GetJWTSecret()))
-	if err != nil {
-		return "", err
-	}
+	tokenString, _ := token.SignedString([]byte(u.TokenService.GetJWTSecret()))
+
 	return tokenString, nil
 }
 
 func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
-
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, invalidTokenErr
 		}
 
-		secretKey := u.TokenService.GetJWTSecret()
-
-		return []byte(secretKey), nil
+		return []byte(u.TokenService.GetJWTSecret()), nil
 	})
 
 	if err != nil {
@@ -134,17 +130,23 @@ func (u *User) parseToken(tokenString string) (*jwt.Token, MessageErr) {
 
 func (u *User) bindTokenToUserEntity(claim jwt.MapClaims) MessageErr {
 
-	if uuid, ok := claim["id"].(uuid.UUID); !ok {
+	idString, ok := claim["id"].(string)
+	if !ok {
 		return invalidTokenErr
-	} else {
-		u.Id = uuid
 	}
 
-	if name, ok := claim["name"].(string); !ok {
+	id, err := uuid.Parse(idString)
+	if err != nil {
 		return invalidTokenErr
-	} else {
-		u.Name = name
 	}
+	u.Id = id
+
+	email, ok := claim["email"].(string)
+	if !ok {
+		return invalidTokenErr
+	}
+
+	u.Email = email
 
 	return nil
 }
@@ -177,8 +179,11 @@ func (u *User) ValidateToken(bearerToken string) error {
 	} else {
 		mapClaims = claims
 	}
-
 	err = u.bindTokenToUserEntity(mapClaims)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
