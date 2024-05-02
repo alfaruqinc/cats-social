@@ -81,7 +81,7 @@ func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
 
 		err = c.catMatchService.DeleteCatMatch(ctx, catMatchId)
 		if err, ok := err.(domain.MessageErr); ok {
-			ctx.JSON(err.Status(), err.Message())
+			ctx.JSON(err.Status(), err)
 			return
 		}
 
