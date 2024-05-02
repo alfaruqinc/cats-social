@@ -61,6 +61,7 @@ type User struct {
 	Name         string       `json:"name" db:"name" validate:"required,min=5,max=50"`
 	Password     string       `json:"password" db:"password" validate:"required,min=5,max=15"`
 	TokenService TokenService `json:"accessToken"`
+	CreatedAt    time.Time    `json:"createdAt" db:"created_at"`
 }
 
 func NewUser() *User {

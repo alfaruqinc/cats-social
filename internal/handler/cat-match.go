@@ -2,14 +2,14 @@ package handler
 
 import (
 	"cats-social/internal/service"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CatMatchHandler interface {
 	CreateCatMatch() gin.HandlerFunc
-	GetCatMatches() gin.HandlerFunc
-	GetCatMatchByID() gin.HandlerFunc
+	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
 	UpdateCatMatchByID() gin.HandlerFunc
 	DeleteCatMatch() gin.HandlerFunc
 }
@@ -26,23 +26,35 @@ func NewCatMatchHandler(catMatchService service.CatMatchService) CatMatchHandler
 
 func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "Create Cat Match",
+		result, err := c.catMatchService.CreateCatMatch(ctx, nil)
+		if err != nil {
+			ctx.JSON(err.Status(), gin.H{
+				"message": err.Message(),
+			})
+
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{
+			"message": result,
 		})
 	}
 }
 
-func (c *catMatchHandler) GetCatMatches() gin.HandlerFunc {
+func (c *catMatchHandler) GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "Get Cat Matches",
-		})
-	}
-}
+		// TODO: get id of user from token
+		result, err := c.catMatchService.GetCatMatchesByIssuerOrReceiverID(ctx, "")
+		if err != nil {
+			ctx.JSON(err.Status(), gin.H{
+				"message": err.Message(),
+			})
 
-func (c *catMatchHandler) GetCatMatchByID() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+			return
+		}
+
 		ctx.JSON(200, gin.H{
+			"data":    result,
 			"message": "Get Cat Match By ID",
 		})
 	}

@@ -3,14 +3,14 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS cat_matches (
     id UUID PRIMARY KEY NOT NULL,
     created_at TIMESTAMPTZ NOT NULl,
-    issued_by UUID NOT NULL,
+    issued_by_id UUID NOT NULL,
     match_cat_id UUID NOT NULL,
     user_cat_id UUID NOT NULL,
     message VARCHAR(120) NOT NULL,
     status VARCHAR(10) NOT NULL DEFAULT 'waiting'
 );
 
-ALTER TABLE cat_matches ADD CONSTRAINT fk_issued_by_users FOREIGN KEY (issued_by) REFERENCES users (id);
+ALTER TABLE cat_matches ADD CONSTRAINT fk_issued_by_id_users FOREIGN KEY (issued_by_id) REFERENCES users (id);
 
 ALTER TABLE cat_matches ADD CONSTRAINT fk_match_cat_id_cats FOREIGN KEY (match_cat_id) REFERENCES cats (id);
 
