@@ -106,9 +106,6 @@ func (c *catMatchService) DeleteCatMatch(ctx context.Context, id string) domain.
 	}
 	defer tx.Rollback()
 
-	// TODO: delete after auth api finish
-	userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
-
 	canDelete, err := c.catMatchRepository.CanDeleteCatMatch(ctx, tx, id, userId)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")

@@ -74,6 +74,9 @@ func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		catMatchId := ctx.Param("id")
 
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
 		_, err := uuid.Parse(catMatchId)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
