@@ -15,6 +15,7 @@ type CatMatchRepository interface {
 	UpdateCatMatchByID(ctx context.Context, tx *sql.Tx, id string, catMatch *domain.CatMatch) error
 	DeleteCatMatch(ctx context.Context, tx *sql.Tx, id string) error
 	GetStatusCatMatch(ctx context.Context, tx *sql.Tx, id string) (string, error)
+	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
 
 type catMatchRepository struct{}
@@ -181,4 +182,16 @@ func (c *catMatchRepository) GetStatusCatMatch(ctx context.Context, tx *sql.Tx, 
 	}
 
 	return status, nil
+}
+
+func (c *catMatchRepository) CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error) {
+	query := `SELECT issued_by_id = $2 FROM cat_matches WHERE id = $1`
+
+	var canDelete bool
+	err := tx.QueryRowContext(ctx, query, id, userId).Scan(&canDelete)
+	if err != nil {
+		return false, err
+	}
+
+	return canDelete, nil
 }
