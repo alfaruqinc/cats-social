@@ -59,6 +59,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			created_at, has_matched
 		FROM cats
 		WHERE deleted = false
+		ORDER BY created_at DESC
 		`
 
 		queryParams := c.Request.URL.Query()
