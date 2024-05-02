@@ -2,6 +2,7 @@ package handler
 
 import (
 	"cats-social/internal/domain"
+	"cats-social/internal/repository"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -33,16 +34,13 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 
 		userBody.HashPassword()
 
-		query := `INSERT INTO users (id, name, email, password)
-		VALUES ($1, $2, $3, $4)`
-
-		_, err = db.Exec(query, userBody.Id, userBody.Name, userBody.Email, userBody.Password)
+		err = repository.NewUserPg().CreateNewUser(db, userBody)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, "something went wrong")
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("SOMETHING WENT WRONG"))
 			panic(err)
 		}
 
-		token, err := domain.NewUser().GenerateToken()
+		token, err := userBody.GenerateToken()
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, "something went wrong")
 			panic(err)
@@ -67,32 +65,27 @@ func HandleLogin(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		err := validateLoginUser(*userBody)
-
+		err := validateLoginUser(*userBody, db)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
 
-		var exists bool
-
-		db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, userBody.Email).Scan(&exists)
-
-		if !exists {
+		user, err := repository.NewUserPg().GetByEmail(db, userBody.Email)
+		if err != nil {
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("email has been used"))
 			return
 		}
 
-		var user domain.User
-
-		if !user.ComparePassword(userBody.Password) {
-			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Invalid email or password"))
+		isValidPassword := user.ComparePassword(userBody.Password)
+		if !isValidPassword {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("invalid email or password"))
 			return
 		}
 
-		token, err := domain.NewUser().GenerateToken()
+		token, err := userBody.GenerateToken()
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError(err.Error()))
 			panic(err)
 		}
 
@@ -106,9 +99,15 @@ func HandleLogin(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func validateLoginUser(user domain.User) error {
+func validateLoginUser(user domain.User, db *sql.DB) error {
 	if len(user.Email) < 1 {
 		err := errors.New("email not be empty")
+		return err
+	}
+
+	var count int
+	row := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", user.Email)
+	if err := row.Scan(&count); err != nil {
 		return err
 	}
 
@@ -128,11 +127,6 @@ func ValidateUserRequest(userBody domain.User, db *sql.DB) error {
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", userBody.Email)
 	if err := row.Scan(&count); err != nil {
-		return err
-	}
-
-	if count > 0 {
-		err := domain.NewConflictError("email has been used")
 		return err
 	}
 

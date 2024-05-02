@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cats-social/internal/auth"
 	"cats-social/internal/handler"
 	"cats-social/internal/repository"
 	"cats-social/internal/service"
@@ -10,7 +11,6 @@ import (
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-
 	// dependency injection
 	catMatchRepository := repository.NewCatMatchRepository()
 	catMatchService := service.NewCatMatchService(catMatchRepository, s.db)
@@ -28,6 +28,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// cat
 	cat := apiV1.Group("/cat")
+	cat.Use(auth.NewAuth(repository.NewUserPg()).Authentication(s.db))
 	cat.GET("", handler.HandleGetAllCats(s.db))
 	cat.POST("", handler.HandleAddNewCat(s.db))
 	cat.PUT(":catId", handler.HandleUpdateCat(s.db))
@@ -37,7 +38,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 	catMatch := cat.Group("/match")
 	catMatch.POST("", catMatchHandler.CreateCatMatch())
 	catMatch.GET("", catMatchHandler.GetCatMatchesByIssuerOrReceiverID())
-	catMatch.GET("", func(c *gin.Context) { c.String(200, "HALO CAT MATCH") })
 
 	return r
 }

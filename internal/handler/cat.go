@@ -59,7 +59,6 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			created_at, has_matched
 		FROM cats
 		WHERE deleted = false
-		ORDER BY created_at DESC
 		`
 
 		queryParams := c.Request.URL.Query()
@@ -71,6 +70,7 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 			query += "AND " + strings.Join(whereClause, " AND ")
 		}
 		query += strings.Join(limitOffsetClause, " ")
+		query += "ORDER BY created_at DESC"
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
