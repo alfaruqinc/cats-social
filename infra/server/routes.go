@@ -36,6 +36,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// cat match
 	catMatch := cat.Group("/match")
 	catMatch.POST("", catMatchHandler.CreateCatMatch())
+	catMatch.GET("", catMatchHandler.GetCatMatchesByIssuerOrReceiverID())
 	catMatch.GET("", func(c *gin.Context) { c.String(200, "HALO CAT MATCH") })
 
 	return r
