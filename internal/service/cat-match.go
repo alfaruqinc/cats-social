@@ -11,7 +11,7 @@ type CatMatchService interface {
 	CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (*domain.CatMatchResponse, domain.MessageErr)
-	DeleteCatMatch(ctx context.Context, id string) domain.MessageErr
+	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
 }
 
 type catMatchService struct {
@@ -92,14 +92,13 @@ func (c *catMatchService) GetCatMatchesByIssuerOrReceiverID(ctx context.Context,
 	}
 
 	return catMatchResponses, nil
-
 }
 
 func (c *catMatchService) UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (*domain.CatMatchResponse, domain.MessageErr) {
 	return nil, nil
 }
 
-func (c *catMatchService) DeleteCatMatch(ctx context.Context, id string) domain.MessageErr {
+func (c *catMatchService) DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.NewInternalServerError("Failed to start transaction")
@@ -124,7 +123,7 @@ func (c *catMatchService) DeleteCatMatch(ctx context.Context, id string) domain.
 		return domain.NewBadRequest("Cannot delete non waiting cat match request")
 	}
 
-	err = c.catMatchRepository.DeleteCatMatch(ctx, tx, id)
+	err = c.catMatchRepository.DeleteCatMatchByID(ctx, tx, id)
 	if err != nil {
 		return domain.NewBadRequest("Failed to create cat match")
 	}

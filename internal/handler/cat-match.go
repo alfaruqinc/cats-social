@@ -13,7 +13,7 @@ type CatMatchHandler interface {
 	CreateCatMatch() gin.HandlerFunc
 	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
 	UpdateCatMatchByID() gin.HandlerFunc
-	DeleteCatMatch() gin.HandlerFunc
+	DeleteCatMatchByID() gin.HandlerFunc
 }
 
 type catMatchHandler struct {
@@ -70,7 +70,7 @@ func (c *catMatchHandler) UpdateCatMatchByID() gin.HandlerFunc {
 	}
 }
 
-func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
+func (c *catMatchHandler) DeleteCatMatchByID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		catMatchId := ctx.Param("id")
 
@@ -82,7 +82,7 @@ func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
 		}
 
-		err = c.catMatchService.DeleteCatMatch(ctx, catMatchId)
+		err = c.catMatchService.DeleteCatMatchByID(ctx, catMatchId, user.Id.String())
 		if err, ok := err.(domain.MessageErr); ok {
 			ctx.JSON(err.Status(), err)
 			return
