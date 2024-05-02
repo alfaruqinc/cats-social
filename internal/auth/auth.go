@@ -24,25 +24,17 @@ func NewAuth(ur repository.UserRepository) AuthService {
 
 func (a *authServiceImpl) Authentication(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var invalidTokenErr = domain.NewUnauthenticatedError("invalid token")
+		invalidTokenErr := domain.NewUnauthenticatedError("invalid token")
 		bearerToken := ctx.GetHeader("Authorization")
 		user := domain.NewUser()
 
 		err := user.ValidateToken(bearerToken)
-
 		if err != nil {
 			ctx.AbortWithStatusJSON(invalidTokenErr.Status(), invalidTokenErr)
 			return
 		}
 
-		_, err = a.ur.GetById(db, user.Id)
-
-		if err != nil {
-			ctx.AbortWithStatusJSON(invalidTokenErr.Status(), invalidTokenErr)
-			return
-		}
 		_, err = a.ur.GetByEmail(db, user.Email)
-
 		if err != nil {
 			ctx.AbortWithStatusJSON(invalidTokenErr.Status(), invalidTokenErr)
 			return
