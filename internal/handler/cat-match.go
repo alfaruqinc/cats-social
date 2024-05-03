@@ -3,6 +3,7 @@ package handler
 import (
 	"cats-social/internal/domain"
 	"cats-social/internal/service"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -35,6 +36,11 @@ func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 
 		var body domain.CreateCatMatchRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
+			err, ok := err.(*json.UnmarshalTypeError)
+			if ok {
+				ctx.JSON(http.StatusBadRequest, domain.NewBadRequest(fmt.Sprintf("%s should be string", err.Field)))
+				return
+			}
 			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
 			return
 		}
