@@ -17,6 +17,7 @@ type CatRepository interface {
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
 	CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
+	CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -142,4 +143,21 @@ func (c *CatRepositoryImpl) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId
 	}
 
 	return owner, nil
+}
+
+func (c *CatRepositoryImpl) CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT c1.sex = c2.sex
+		FROM cats c1
+			JOIN cats c2 on c2.id != c1.id
+		WHERE c1.id = $1
+			AND c2.id = $2
+	`
+	var hasSameSex bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&hasSameSex)
+	if err != nil {
+		return false, err
+	}
+
+	return hasSameSex, nil
 }

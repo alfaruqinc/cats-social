@@ -47,6 +47,14 @@ func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User,
 		return domain.NewNotFoundError("You are not the cat's owner")
 	}
 
+	hasSameSex, err := c.catRepository.CheckCatHasSameSex(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if hasSameSex {
+		return domain.NewBadRequest("Cat's sex is same")
+	}
+
 	_, err = c.catMatchRepository.CreateCatMatch(ctx, tx, catMatchPayload)
 	if err != nil {
 		return domain.NewBadRequest("Failed to create cat match")
