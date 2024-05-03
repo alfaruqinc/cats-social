@@ -14,7 +14,7 @@ type CatMatchHandler interface {
 	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
 	UpdateCatMatchByID() gin.HandlerFunc
 	DeleteCatMatchByID() gin.HandlerFunc
-	ApproveCatMatchByMatchCatID() gin.HandlerFunc
+	ApproveCatMatch() gin.HandlerFunc
 }
 
 type catMatchHandler struct {
@@ -95,7 +95,7 @@ func (c *catMatchHandler) DeleteCatMatchByID() gin.HandlerFunc {
 	}
 }
 
-func (c *catMatchHandler) ApproveCatMatchByMatchCatID() gin.HandlerFunc {
+func (c *catMatchHandler) ApproveCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userReq, _ := ctx.Get("userData")
 		user := userReq.(*domain.User)
