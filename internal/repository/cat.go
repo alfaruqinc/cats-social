@@ -2,6 +2,7 @@ package repository
 
 import (
 	"cats-social/internal/domain"
+	"context"
 	"database/sql"
 	"errors"
 
@@ -15,7 +16,7 @@ type CatRepository interface {
 	DeleteCat(db *sql.DB, catId uuid.UUID) error
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
-	CheckOwnerCat(tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
+	CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -123,7 +124,7 @@ func (c *CatRepositoryImpl) CheckEditableSex(db *sql.DB, cat *domain.Cat) error 
 	return nil
 }
 
-func (c *CatRepositoryImpl) CheckOwnerCat(tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {
+func (c *CatRepositoryImpl) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {
 	queryCheckCatId := `
 		SELECT EXISTS (
 			SELECT 1
@@ -134,7 +135,7 @@ func (c *CatRepositoryImpl) CheckOwnerCat(tx *sql.Tx, catId uuid.UUID, userId uu
 		)
 	`
 	var owner bool
-	row := tx.QueryRow(queryCheckCatId, catId, userId)
+	row := tx.QueryRowContext(ctx, queryCheckCatId, catId, userId)
 	err := row.Scan(&owner)
 	if err != nil {
 		return false, err

@@ -39,7 +39,7 @@ func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User,
 	}
 	defer tx.Rollback()
 
-	owner, err := c.catRepository.CheckOwnerCat(tx, catMatchPayload.UserCatID, user.Id)
+	owner, err := c.catRepository.CheckOwnerCat(ctx, tx, catMatchPayload.UserCatID, user.Id)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
 	}
