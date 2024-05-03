@@ -10,7 +10,7 @@ import (
 )
 
 type CatMatchService interface {
-	CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) domain.MessageErr
+	CreateCatMatch(ctx context.Context, user *domain.User, catMatchPayload *domain.CatMatch) domain.MessageErr
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
@@ -19,23 +19,57 @@ type CatMatchService interface {
 }
 
 type catMatchService struct {
-	catMatchRepository repository.CatMatchRepository
 	db                 *sql.DB
+	catMatchRepository repository.CatMatchRepository
+	catRepository      repository.CatRepository
 }
 
-func NewCatMatchService(catMatchRepository repository.CatMatchRepository, db *sql.DB) CatMatchService {
+func NewCatMatchService(db *sql.DB, catMatchRepository repository.CatMatchRepository, catRespository repository.CatRepository) CatMatchService {
 	return &catMatchService{
-		catMatchRepository: catMatchRepository,
 		db:                 db,
+		catMatchRepository: catMatchRepository,
+		catRepository:      catRespository,
 	}
 }
 
-func (c *catMatchService) CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) domain.MessageErr {
+func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User, catMatchPayload *domain.CatMatch) domain.MessageErr {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.NewBadRequest("Failed to start transaction")
 	}
 	defer tx.Rollback()
+
+	owner, err := c.catRepository.CheckOwnerCat(ctx, tx, catMatchPayload.UserCatID, user.Id)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if !owner {
+		return domain.NewNotFoundError("You are not the cat's owner")
+	}
+
+	hasSameSex, err := c.catRepository.CheckCatHasSameSex(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if hasSameSex {
+		return domain.NewBadRequest("Cat's sex is same")
+	}
+
+	hasMatched, err := c.catRepository.CheckCatHasMatched(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if hasMatched {
+		return domain.NewBadRequest("Either user or match cat already has matched")
+	}
+
+	sameOwner, err := c.catRepository.CheckCatFromSameOwner(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if sameOwner {
+		return domain.NewBadRequest("User and match cat is from the same owner")
+	}
 
 	_, err = c.catMatchRepository.CreateCatMatch(ctx, tx, catMatchPayload)
 	if err != nil {

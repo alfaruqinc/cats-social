@@ -2,6 +2,7 @@ package repository
 
 import (
 	"cats-social/internal/domain"
+	"context"
 	"database/sql"
 	"errors"
 
@@ -15,6 +16,10 @@ type CatRepository interface {
 	DeleteCat(db *sql.DB, catId uuid.UUID) error
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
+	CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
+	CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
+	CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
+	CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -120,4 +125,75 @@ func (c *CatRepositoryImpl) CheckEditableSex(db *sql.DB, cat *domain.Cat) error 
 	}
 
 	return nil
+}
+
+func (c *CatRepositoryImpl) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {
+	queryCheckCatId := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM cats
+			WHERE id = $1 
+				AND owned_by_id = $2
+				AND deleted = false
+		)
+	`
+	var owner bool
+	row := tx.QueryRowContext(ctx, queryCheckCatId, catId, userId)
+	err := row.Scan(&owner)
+	if err != nil {
+		return false, err
+	}
+
+	return owner, nil
+}
+
+func (c *CatRepositoryImpl) CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT c1.sex = c2.sex
+		FROM cats c1
+			JOIN cats c2 on c2.id != c1.id
+		WHERE c1.id = $1
+			AND c2.id = $2
+	`
+	var hasSameSex bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&hasSameSex)
+	if err != nil {
+		return false, err
+	}
+
+	return hasSameSex, nil
+}
+
+func (c *CatRepositoryImpl) CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT c1.has_matched OR c2.has_matched
+		FROM cats c1
+			JOIN cats c2 on c2.id != c1.id
+		WHERE c1.id = $1
+			AND c2.id = $2
+	`
+	var hasMatched bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&hasMatched)
+	if err != nil {
+		return false, err
+	}
+
+	return hasMatched, nil
+}
+
+func (c *CatRepositoryImpl) CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT c1.owned_by_id = c2.owned_by_id
+		FROM cats c1
+			JOIN cats c2 on c2.id != c1.id
+		WHERE c1.id = $1
+			AND c2.id = $2
+	`
+	var sameOwner bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&sameOwner)
+	if err != nil {
+		return false, err
+	}
+
+	return sameOwner, nil
 }
