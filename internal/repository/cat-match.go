@@ -17,6 +17,7 @@ type CatMatchRepository interface {
 	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
 	ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error
 	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
+	CheckIfUserIsReceiver(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
 
 type catMatchRepository struct{}
@@ -209,4 +210,23 @@ func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, us
 	}
 
 	return nil
+}
+
+func (c *catMatchRepository) CheckIfUserIsReceiver(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error) {
+	query := `
+	SELECT EXISTS (
+		SELECT 1 
+		FROM cat_matches AS cm
+		JOIN cats ON cats.id = cm.match_cat_id
+		WHERE cm.id = $1
+			AND cats.owned_by_id = $2
+	)
+	`
+	var exists bool
+	err := tx.QueryRowContext(ctx, query, id, userId).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }

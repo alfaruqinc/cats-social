@@ -144,11 +144,18 @@ func (c *catMatchService) ApproveCatMatch(ctx context.Context, userId string, ma
 	}
 	defer tx.Rollback()
 
+	userIsReceiver, err := c.catMatchRepository.CheckIfUserIsReceiver(ctx, tx, matchId, userId)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if !userIsReceiver {
+		return domain.NewNotFoundError("Cat match request is not found")
+	}
+
 	status, err := c.catMatchRepository.GetStatusCatMatchByID(ctx, tx, matchId)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
 	}
-
 	if status != "waiting" {
 		return domain.NewBadRequest("Cat match request already approved or rejected")
 	}
