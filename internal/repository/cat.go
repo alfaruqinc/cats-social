@@ -18,6 +18,8 @@ type CatRepository interface {
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
 	CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
 	CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
+	CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
+	// CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -160,4 +162,21 @@ func (c *CatRepositoryImpl) CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, 
 	}
 
 	return hasSameSex, nil
+}
+
+func (c *CatRepositoryImpl) CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT c1.has_matched OR c2.has_matched
+		FROM cats c1
+			JOIN cats c2 on c2.id != c1.id
+		WHERE c1.id = $1
+			AND c2.id = $2
+	`
+	var hasMatched bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&hasMatched)
+	if err != nil {
+		return false, err
+	}
+
+	return hasMatched, nil
 }
