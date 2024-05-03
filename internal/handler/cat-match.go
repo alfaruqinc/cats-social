@@ -112,7 +112,7 @@ func (c *catMatchHandler) ApproveCatMatch() gin.HandlerFunc {
 			return
 		}
 
-		err = c.catMatchService.ApproveCatMatch(ctx, user.Id.String(), body.MatchCatID.String())
+		err = c.catMatchService.ApproveCatMatch(ctx, user.Id.String(), body.ID.String())
 		if err, ok := err.(domain.MessageErr); ok {
 			ctx.JSON(err.Status(), err)
 			return

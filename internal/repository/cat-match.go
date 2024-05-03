@@ -15,7 +15,7 @@ type CatMatchRepository interface {
 	UpdateCatMatchByID(ctx context.Context, tx *sql.Tx, id string, catMatch *domain.CatMatch) error
 	DeleteCatMatchByID(ctx context.Context, tx *sql.Tx, id string) error
 	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
-	ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchCatchId string) error
+	ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error
 	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
 
@@ -200,6 +200,6 @@ func (c *catMatchRepository) CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, 
 	return canDelete, nil
 }
 
-func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchCatchId string) error {
+func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error {
 	return nil
 }

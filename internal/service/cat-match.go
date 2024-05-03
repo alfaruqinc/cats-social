@@ -12,7 +12,7 @@ type CatMatchService interface {
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (*domain.CatMatchResponse, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
-	ApproveCatMatch(ctx context.Context, userId string, matchCatchId string) domain.MessageErr
+	ApproveCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr
 }
 
 type catMatchService struct {
@@ -137,6 +137,6 @@ func (c *catMatchService) DeleteCatMatchByID(ctx context.Context, id string, use
 	return nil
 }
 
-func (c *catMatchService) ApproveCatMatch(ctx context.Context, userId string, matchCatchId string) domain.MessageErr {
+func (c *catMatchService) ApproveCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr {
 	return nil
 }
