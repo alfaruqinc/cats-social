@@ -32,9 +32,10 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// TODO: delete after auth api finish
-		parsed, _ := uuid.Parse("e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b")
-		catBody.OwnedById = parsed
+		userReq, _ := c.Get("userData")
+		user := userReq.(*domain.User)
+
+		catBody.OwnedById = user.Id
 
 		err = repository.NewCatRepository().CreateCat(db, catBody)
 		if err != nil {
@@ -61,10 +62,11 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		WHERE deleted = false
 		`
 
+		userReq, _ := c.Get("userData")
+		user := userReq.(*domain.User)
+
 		queryParams := c.Request.URL.Query()
-		// TODO: change userId value to loggedin user after auth api finish
-		userId := "e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b"
-		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, userId)
+		whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, user.Id.String())
 
 		if len(whereClause) > 0 {
 			query += "AND " + strings.Join(whereClause, " AND ")
@@ -107,6 +109,9 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		userReq, _ := c.Get("userData")
+		user := userReq.(*domain.User)
+
 		catBody := domain.NewCat()
 		if err := c.ShouldBindJSON(catBody); err != nil {
 			c.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
@@ -122,7 +127,7 @@ func HandleUpdateCat(db *sql.DB) gin.HandlerFunc {
 		catBody.ID = parsedCatId
 		catRepo := repository.NewCatRepository()
 
-		err = catRepo.CheckCatIdExists(db, catBody.ID)
+		err = catRepo.CheckCatIdExists(db, catBody.ID, user.Id)
 		if err != nil {
 			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
 			return
@@ -161,9 +166,12 @@ func HandleDeleteCat(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		userReq, _ := c.Get("userData")
+		user := userReq.(*domain.User)
+
 		catRepo := repository.NewCatRepository()
 
-		err = catRepo.CheckCatIdExists(db, parsedCatId)
+		err = catRepo.CheckCatIdExists(db, parsedCatId, user.Id)
 		if err != nil {
 			c.JSON(http.StatusNotFound, domain.NewNotFoundError(err.Error()))
 			return

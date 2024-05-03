@@ -13,7 +13,7 @@ type CatRepository interface {
 	GetAllCats(db *sql.DB) ([]domain.Cat, error)
 	UpdateCat(db *sql.DB, cat *domain.Cat) error
 	DeleteCat(db *sql.DB, catId uuid.UUID) error
-	CheckCatIdExists(db *sql.DB, catId uuid.UUID) error
+	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
 }
 
@@ -73,16 +73,18 @@ func (c *CatRepositoryImpl) DeleteCat(db *sql.DB, catId uuid.UUID) error {
 	return nil
 }
 
-func (c *CatRepositoryImpl) CheckCatIdExists(db *sql.DB, catId uuid.UUID) error {
+func (c *CatRepositoryImpl) CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error {
 	queryCheckCatId := `
 		SELECT EXISTS (
 			SELECT 1
 			FROM cats
-			WHERE id = $1 AND deleted = false
+			WHERE id = $1 
+				AND owned_by_id = $2
+				AND deleted = false
 		)
 	`
 	var catIdExists bool
-	row := db.QueryRow(queryCheckCatId, catId)
+	row := db.QueryRow(queryCheckCatId, catId, userId)
 	err := row.Scan(&catIdExists)
 	if err != nil {
 		return err
