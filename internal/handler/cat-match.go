@@ -30,7 +30,17 @@ func NewCatMatchHandler(catMatchService service.CatMatchService) CatMatchHandler
 
 func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		result, err := c.catMatchService.CreateCatMatch(ctx, nil)
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		body := domain.NewCatMatch()
+		if err := ctx.ShouldBindJSON(&body); err != nil {
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+		}
+
+		body.IssuedByID = user.Id
+
+		err := c.catMatchService.CreateCatMatch(ctx, body)
 		if err != nil {
 			ctx.JSON(err.Status(), gin.H{
 				"message": err.Message(),
@@ -40,7 +50,7 @@ func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 		}
 
 		ctx.JSON(http.StatusCreated, gin.H{
-			"message": result,
+			"message": "success create cat match",
 		})
 	}
 }
