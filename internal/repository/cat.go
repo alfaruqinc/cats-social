@@ -20,6 +20,7 @@ type CatRepository interface {
 	CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 	CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 	CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
+	CheckBothCatExists(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -196,4 +197,23 @@ func (c *CatRepositoryImpl) CheckCatFromSameOwner(ctx context.Context, tx *sql.T
 	}
 
 	return sameOwner, nil
+}
+
+func (c *CatRepositoryImpl) CheckBothCatExists(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM cats c1
+				JOIN cats c2 on c2.id != c1.id
+			WHERE c1.id = $1
+				AND c2.id = $2
+		)
+	`
+	var bothExists bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&bothExists)
+	if err != nil {
+		return false, err
+	}
+
+	return bothExists, nil
 }
