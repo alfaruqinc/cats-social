@@ -15,6 +15,7 @@ type CatMatchService interface {
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
 	ApproveCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr
+	RejectCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr
 }
 
 type catMatchService struct {
@@ -187,6 +188,41 @@ func (c *catMatchService) ApproveCatMatch(ctx context.Context, userId string, ma
 	err = c.catMatchRepository.ApproveCatMatch(ctx, tx, userId, matchId)
 	if err != nil {
 		return domain.NewBadRequest("Failed to approve cat match request")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return domain.NewInternalServerError("Failed to commit transaction")
+	}
+	return nil
+}
+
+func (c *catMatchService) RejectCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr {
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.NewInternalServerError("Failed to start transaction")
+	}
+	defer tx.Rollback()
+
+	userIsReceiver, err := c.catMatchRepository.CheckIfUserIsReceiver(ctx, tx, matchId, userId)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if !userIsReceiver {
+		return domain.NewNotFoundError("Cat match request is not found")
+	}
+
+	status, err := c.catMatchRepository.GetStatusCatMatchByID(ctx, tx, matchId)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if status != "waiting" {
+		return domain.NewBadRequest("Cat match request already approved or rejected")
+	}
+
+	err = c.catMatchRepository.RejectCatMatch(ctx, tx, userId, matchId)
+	if err != nil {
+		return domain.NewBadRequest("Failed to reject cat match request")
 	}
 
 	err = tx.Commit()
