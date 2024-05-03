@@ -71,8 +71,8 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		if len(whereClause) > 0 {
 			query += "AND " + strings.Join(whereClause, " AND ")
 		}
-		query += strings.Join(limitOffsetClause, " ")
-		query += " ORDER BY created_at DESC"
+		query += "\n" + "ORDER BY created_at DESC"
+		query += "\n" + strings.Join(limitOffsetClause, " ")
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
