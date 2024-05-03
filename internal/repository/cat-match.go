@@ -20,6 +20,7 @@ type CatMatchRepository interface {
 	RejectCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error
 	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 	CheckIfUserIsReceiver(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
+	CheckCatsIsMatching(ctx context.Context, tx *sql.Tx, userCatId uuid.UUID, matchCatId uuid.UUID) (bool, error)
 }
 
 type catMatchRepository struct{}
@@ -277,4 +278,23 @@ func (c *catMatchRepository) RejectCatMatch(ctx context.Context, tx *sql.Tx, use
 	}
 
 	return nil
+}
+
+func (c *catMatchRepository) CheckCatsIsMatching(ctx context.Context, tx *sql.Tx, userCatId uuid.UUID, matchCatId uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM cat_matches
+			WHERE user_cat_id = $1
+				AND match_cat_id = $2
+				AND status = 'waiting'
+		)
+	`
+	var isMatching bool
+	err := tx.QueryRowContext(ctx, query, userCatId, matchCatId).Scan(&isMatching)
+	if err != nil {
+		return false, err
+	}
+
+	return isMatching, nil
 }
