@@ -38,11 +38,12 @@ type CatMatch struct {
 }
 
 type CatMatchResponse struct {
-	ID        uuid.UUID   `json:"id"`
-	MatchCat  CatResponse `json:"matchCatDetail"`
-	UserCat   CatResponse `json:"userCatDetail"`
-	Message   string      `json:"message"`
-	CreatedAt time.Time   `json:"createdAt"`
+	ID        uuid.UUID    `json:"id"`
+	IssuedBy  UserResponse `json:"issuedBy"`
+	MatchCat  CatResponse  `json:"matchCatDetail"`
+	UserCat   CatResponse  `json:"userCatDetail"`
+	Message   string       `json:"message"`
+	CreatedAt time.Time    `json:"createdAt"`
 }
 
 func NewCatMatch() *CatMatch {

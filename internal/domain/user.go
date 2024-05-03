@@ -48,9 +48,10 @@ type LoginRequest struct {
 }
 
 type UserResponse struct {
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	TokenService string `json:"accessToken"`
+	Email        string    `json:"email"`
+	Name         string    `json:"name"`
+	TokenService string    `json:"accessToken,omitempty"`
+	CreatedAt    time.Time `json:"createdAt,omitempty"`
 }
 
 type User struct {
