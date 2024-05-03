@@ -209,6 +209,20 @@ func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, us
 		return err
 	}
 
+	queryDeleteWaitingStatus := `
+		DELETE FROM cat_matches
+		WHERE status = 'waiting'
+			AND match_cat_id = (
+				SELECT match_cat_id
+				FROM cat_matches
+				WHERE id = $1
+			)
+	`
+	_, err = tx.ExecContext(ctx, queryDeleteWaitingStatus, matchId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
