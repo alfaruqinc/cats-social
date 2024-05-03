@@ -6,12 +6,13 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type CatMatchRepository interface {
 	CreateCatMatch(ctx context.Context, tx *sql.Tx, catMatch *domain.CatMatch) (*domain.CatMatch, error)
 	GetCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (*domain.CatMatch, error)
-	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, tx *sql.Tx, id string) ([]domain.CatMatch, error)
+	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, tx *sql.Tx, userId string) ([]domain.CatMatch, error)
 	UpdateCatMatchByID(ctx context.Context, tx *sql.Tx, id string, catMatch *domain.CatMatch) error
 	DeleteCatMatchByID(ctx context.Context, tx *sql.Tx, id string) error
 	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
@@ -92,26 +93,28 @@ func (c *catMatchRepository) GetCatMatchByID(ctx context.Context, tx *sql.Tx, id
 	return &catMatch, nil
 }
 
-func (c *catMatchRepository) GetCatMatchesByIssuerOrReceiverID(ctx context.Context, tx *sql.Tx, id string) ([]domain.CatMatch, error) {
+func (c *catMatchRepository) GetCatMatchesByIssuerOrReceiverID(ctx context.Context, tx *sql.Tx, userId string) ([]domain.CatMatch, error) {
 	query := `
 		SELECT	cm.id, cm.created_at, cm.issued_by_id, cm.match_cat_id, cm.user_cat_id, cm.message, cm.status, 
 			u.name as issued_by_name, u.email as issued_by_email, u.created_at as issued_by_created_at, 
-			ca.name as match_cat_name, ca.race as match_cat_race, ca.sex as match_cat_sex, ca.description as match_cat_description, ca.age_in_month as match_cat_age_in_month, ca.image_urls as match_cat_image_urls, ca.has_matched as match_cat_has_matched , ca.created_at as match_cat_created_at,
-			cb.name as user_cat_name, cb.race as user_cat_race, cb.sex as match_cat_sex, cb.description as user_cat_description, cb.age_in_month as user_cat_age_in_month, cb.image_urls as user_cat_image_urls, cb.has_matched as user_cat_has_matched , cb.created_at as user_cat_created_at
+			ca.id as match_cat_id, ca.name as match_cat_name, ca.race as match_cat_race, ca.sex as match_cat_sex, ca.description as match_cat_description, ca.age_in_month as match_cat_age_in_month, ca.image_urls as match_cat_image_urls, ca.has_matched as match_cat_has_matched , ca.created_at as match_cat_created_at,
+			cb.id as user_cat_id, cb.name as user_cat_name, cb.race as user_cat_race, cb.sex as match_cat_sex, cb.description as user_cat_description, cb.age_in_month as user_cat_age_in_month, cb.image_urls as user_cat_image_urls, cb.has_matched as user_cat_has_matched , cb.created_at as user_cat_created_at
 		FROM cat_matches cm
-		INNER JOIN users u ON cat_matches.issued_by_id = users.id
-		INNER JOIN cats ca ON cat_matches.match_cat_id = cats.id
-		INNER JOIN cats cb ON cat_matches.user_cat_id = cats.id
-		WHERE u.id = $1 OR ca.owned_by = $1
+		INNER JOIN users u ON cm.issued_by_id = u.id
+		INNER JOIN cats ca ON cm.match_cat_id = ca.id
+		INNER JOIN cats cb ON cm.user_cat_id = cb.id
+		WHERE cm.status = 'waiting' AND (ca.owned_by_id = $1 OR cb.owned_by_id = $1)
+		ORDER BY created_at DESC
 	`
 
-	rows, err := tx.QueryContext(ctx, query, id)
+	rows, err := tx.QueryContext(ctx, query, userId)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var catMatches []domain.CatMatch
+	m := pgtype.NewMap()
 	for rows.Next() {
 		var catMatch domain.CatMatch
 		err := rows.Scan(
@@ -125,20 +128,22 @@ func (c *catMatchRepository) GetCatMatchesByIssuerOrReceiverID(ctx context.Conte
 			&catMatch.IssuedBy.Name,
 			&catMatch.IssuedBy.Email,
 			&catMatch.IssuedBy.CreatedAt,
+			&catMatch.MatchCat.ID,
 			&catMatch.MatchCat.Name,
 			&catMatch.MatchCat.Race,
 			&catMatch.MatchCat.Sex,
 			&catMatch.MatchCat.Description,
 			&catMatch.MatchCat.AgeInMonth,
-			&catMatch.MatchCat.ImageUrls,
+			m.SQLScanner(&catMatch.MatchCat.ImageUrls),
 			&catMatch.MatchCat.HasMatched,
 			&catMatch.MatchCat.CreatedAt,
+			&catMatch.UserCat.ID,
 			&catMatch.UserCat.Name,
 			&catMatch.UserCat.Race,
 			&catMatch.UserCat.Sex,
 			&catMatch.UserCat.Description,
 			&catMatch.UserCat.AgeInMonth,
-			&catMatch.UserCat.ImageUrls,
+			m.SQLScanner(&catMatch.UserCat.ImageUrls),
 			&catMatch.UserCat.HasMatched,
 			&catMatch.UserCat.CreatedAt,
 		)
