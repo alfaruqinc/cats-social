@@ -223,6 +223,24 @@ func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, us
 		return err
 	}
 
+	querySetHasMatched := `
+		UPDATE cats 
+		SET has_matched = true 
+		WHERE id IN (
+			SELECT match_cat_id
+			FROM cat_matches
+			WHERE id = $1
+			UNION
+			SELECT user_cat_id
+			FROM cat_matches
+			WHERE id = $1
+		)
+	`
+	_, err = tx.ExecContext(ctx, querySetHasMatched, matchId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
