@@ -25,8 +25,12 @@ func HandleNewUser(db *sql.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
 		}
+		if err := CheckDuplicateEmail(userBody.Email, db); err != nil {
+			ctx.JSON(http.StatusConflict, domain.NewConflictError(err.Error()))
+			return
+		}
 
-		err := ValidateUserRequest(*userBody, db)
+		err := ValidateUserRequest(userBody, db)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest(err.Error()))
 			return
@@ -105,6 +109,10 @@ func validateLoginUser(user domain.User, db *sql.DB) error {
 		err := errors.New("email not be empty")
 		return err
 	}
+	if len(user.Password) < 1 {
+		err := errors.New("password not be empty")
+		return err
+	}
 
 	var count int
 	row := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", user.Email)
@@ -119,30 +127,48 @@ func validateLoginUser(user domain.User, db *sql.DB) error {
 	return nil
 }
 
-func ValidateUserRequest(userBody domain.User, db *sql.DB) error {
+func CheckDuplicateEmail(email string, db *sql.DB) error {
+	var count int
+	row := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", email)
+	if err := row.Scan(&count); err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return errors.New("email has been used")
+	}
+
+	return nil
+}
+
+func ValidateUserRequest(userBody *domain.User, db *sql.DB) error {
+	if len(userBody.Email) < 1 {
+		err := errors.New("email not be empty")
+		return err
+	}
+
 	if !validEmail(userBody.Email) {
 		err := errors.New("invalid email format")
 		return err
 	}
 
-	var count int
-	row := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", userBody.Email)
-	if err := row.Scan(&count); err != nil {
+	if len(userBody.Name) < 1 {
+		err := errors.New("name not be empty")
 		return err
 	}
 
-	if userBody.Email == domain.NewUser().Email {
-		err := domain.NewConflictError("email has been used")
+	if len(userBody.Name) < 5 || len(userBody.Name) > 50 {
+		err := errors.New("minimum password is 5 length and maximum length is 50")
 		return err
 	}
 
-	if len(userBody.Name) < 1 || len(userBody.Name) > 100 {
-		err := errors.New("name length should be between 1 and 100")
+	if len(userBody.Password) < 1 {
+		err := errors.New("password not be empty")
 		return err
 	}
 
-	if len(userBody.Password) > 8 {
-		err := errors.New("minimum password is 8 length")
+	if len(userBody.Password) < 5 || len(userBody.Password) > 15 {
+		err := errors.New("minimum password is 5 length and maximum length is 15")
 		return err
 	}
 	return nil

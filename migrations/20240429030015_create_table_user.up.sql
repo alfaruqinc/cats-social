@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS
         email VARCHAR(100) NOT NULL,
         name VARCHAR(100) NOT NULL,
         password TEXT NOT NULL,
-        CONSTRAINT
-            unique_email
-                UNIQUE(email)
+            CONSTRAINT
+                unique_email
+                    UNIQUE(email)
+
     );
