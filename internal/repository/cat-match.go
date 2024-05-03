@@ -15,8 +15,9 @@ type CatMatchRepository interface {
 	UpdateCatMatchByID(ctx context.Context, tx *sql.Tx, id string, catMatch *domain.CatMatch) error
 	DeleteCatMatchByID(ctx context.Context, tx *sql.Tx, id string) error
 	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
-	ApproveCatMatchByMatchCatID(ctx context.Context, tx *sql.Tx, userId string, matchCatchId string) error
+	ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error
 	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
+	CheckIfUserIsReceiver(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
 
 type catMatchRepository struct{}
@@ -200,6 +201,64 @@ func (c *catMatchRepository) CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, 
 	return canDelete, nil
 }
 
-func (c *catMatchRepository) ApproveCatMatchByMatchCatID(ctx context.Context, tx *sql.Tx, userId string, matchCatchId string) error {
+func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error {
+	query := `UPDATE cat_matches SET status = 'approved' WHERE id = $1`
+
+	_, err := tx.ExecContext(ctx, query, matchId)
+	if err != nil {
+		return err
+	}
+
+	queryDeleteWaitingStatus := `
+		DELETE FROM cat_matches
+		WHERE status = 'waiting'
+			AND match_cat_id = (
+				SELECT match_cat_id
+				FROM cat_matches
+				WHERE id = $1
+			)
+	`
+	_, err = tx.ExecContext(ctx, queryDeleteWaitingStatus, matchId)
+	if err != nil {
+		return err
+	}
+
+	querySetHasMatched := `
+		UPDATE cats 
+		SET has_matched = true 
+		WHERE id IN (
+			SELECT match_cat_id
+			FROM cat_matches
+			WHERE id = $1
+			UNION
+			SELECT user_cat_id
+			FROM cat_matches
+			WHERE id = $1
+		)
+	`
+	_, err = tx.ExecContext(ctx, querySetHasMatched, matchId)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (c *catMatchRepository) CheckIfUserIsReceiver(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error) {
+	query := `
+	SELECT EXISTS (
+		SELECT 1 
+		FROM cat_matches AS cm
+		JOIN cats ON cats.id = cm.match_cat_id
+		WHERE cm.id = $1
+			AND cats.owned_by_id = $2
+	)
+	`
+	var exists bool
+	err := tx.QueryRowContext(ctx, query, id, userId).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
