@@ -19,7 +19,7 @@ type CatRepository interface {
 	CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
 	CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 	CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
-	// CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
+	CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -179,4 +179,21 @@ func (c *CatRepositoryImpl) CheckCatHasMatched(ctx context.Context, tx *sql.Tx, 
 	}
 
 	return hasMatched, nil
+}
+
+func (c *CatRepositoryImpl) CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+	query := `
+		SELECT c1.owned_by_id = c2.owned_by_id
+		FROM cats c1
+			JOIN cats c2 on c2.id != c1.id
+		WHERE c1.id = $1
+			AND c2.id = $2
+	`
+	var sameOwner bool
+	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&sameOwner)
+	if err != nil {
+		return false, err
+	}
+
+	return sameOwner, nil
 }
