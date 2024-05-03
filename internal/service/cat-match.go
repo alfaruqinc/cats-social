@@ -12,6 +12,7 @@ type CatMatchService interface {
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (*domain.CatMatchResponse, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
+	ApproveCatMatchByMatchCatID(ctx context.Context, userId string, matchCatchId string) domain.MessageErr
 }
 
 type catMatchService struct {
@@ -133,5 +134,9 @@ func (c *catMatchService) DeleteCatMatchByID(ctx context.Context, id string, use
 		return domain.NewInternalServerError("Failed to commit transaction")
 	}
 
+	return nil
+}
+
+func (c *catMatchService) ApproveCatMatchByMatchCatID(ctx context.Context, userId string, matchCatchId string) domain.MessageErr {
 	return nil
 }

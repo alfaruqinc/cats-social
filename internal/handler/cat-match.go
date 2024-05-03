@@ -14,6 +14,7 @@ type CatMatchHandler interface {
 	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
 	UpdateCatMatchByID() gin.HandlerFunc
 	DeleteCatMatchByID() gin.HandlerFunc
+	ApproveCatMatchByMatchCatID() gin.HandlerFunc
 }
 
 type catMatchHandler struct {
@@ -90,6 +91,29 @@ func (c *catMatchHandler) DeleteCatMatchByID() gin.HandlerFunc {
 
 		ctx.JSON(200, gin.H{
 			"message": "success delete cat match request",
+		})
+	}
+}
+
+func (c *catMatchHandler) ApproveCatMatchByMatchCatID() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		var body domain.CatMatch
+		if err := ctx.ShouldBindJSON(&body); err != nil {
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			panic(err)
+		}
+
+		err := c.catMatchService.ApproveCatMatchByMatchCatID(ctx, user.Id.String(), body.MatchCatID.String())
+		if err, ok := err.(domain.MessageErr); ok {
+			ctx.JSON(err.Status(), err)
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{
+			"message": "success approve cat match",
 		})
 	}
 }
