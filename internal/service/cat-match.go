@@ -39,6 +39,14 @@ func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User,
 	}
 	defer tx.Rollback()
 
+	bothExists, err := c.catRepository.CheckBothCatExists(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if !bothExists {
+		return domain.NewNotFoundError("Either user or match cat is not found")
+	}
+
 	owner, err := c.catRepository.CheckOwnerCat(ctx, tx, catMatchPayload.UserCatID, user.Id)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
@@ -53,6 +61,14 @@ func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User,
 	}
 	if hasSameSex {
 		return domain.NewBadRequest("Cat's sex is same")
+	}
+
+	isMatching, err := c.catMatchRepository.CheckCatsIsMatching(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if isMatching {
+		return domain.NewBadRequest("User and match cat is matching")
 	}
 
 	hasMatched, err := c.catRepository.CheckCatHasMatched(ctx, tx, catMatchPayload.UserCatID, catMatchPayload.MatchCatID)

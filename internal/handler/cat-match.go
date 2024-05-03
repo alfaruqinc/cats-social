@@ -3,6 +3,7 @@ package handler
 import (
 	"cats-social/internal/domain"
 	"cats-social/internal/service"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -33,24 +34,34 @@ func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 		userReq, _ := ctx.Get("userData")
 		user := userReq.(*domain.User)
 
-		body := domain.NewCatMatch()
+		var body domain.CreateCatMatchRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
-			uuidErr := uuid.IsInvalidLengthError(err)
-			if uuidErr {
-				ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("user or match cat is not found"))
+			err, ok := err.(*json.UnmarshalTypeError)
+			if ok {
+				ctx.JSON(http.StatusBadRequest, domain.NewBadRequest(fmt.Sprintf("%s should be string", err.Field)))
 				return
 			}
 			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
 			return
 		}
-		body.IssuedByID = user.Id
 
 		if len(body.Message) < 5 || len(body.Message) > 120 {
 			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("message at least 5 and maximum 120 characters"))
 			return
 		}
+		if len(body.MatchCatID) < 1 {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Match cat id is required"))
+			return
+		}
+		if len(body.UserCatID) < 1 {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("User cat id is required"))
+			return
+		}
 
-		err := c.catMatchService.CreateCatMatch(ctx, user, body)
+		catMatch := domain.NewCatMatchFromBody(body)
+		catMatch.IssuedByID = user.Id
+
+		err := c.catMatchService.CreateCatMatch(ctx, user, catMatch)
 		if err, ok := err.(domain.MessageErr); ok {
 			ctx.JSON(err.Status(), err)
 			return

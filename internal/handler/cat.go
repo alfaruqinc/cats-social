@@ -71,8 +71,8 @@ func HandleGetAllCats(db *sql.DB) gin.HandlerFunc {
 		if len(whereClause) > 0 {
 			query += "AND " + strings.Join(whereClause, " AND ")
 		}
-		query += strings.Join(limitOffsetClause, " ")
-		query += "ORDER BY created_at DESC"
+		query += "\n" + "ORDER BY created_at DESC"
+		query += "\n" + strings.Join(limitOffsetClause, " ")
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
@@ -183,7 +183,7 @@ func HandleDeleteCat(db *sql.DB) gin.HandlerFunc {
 			panic(err)
 		}
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, gin.H{"message": "success delete cat"})
 	}
 }
 
@@ -251,7 +251,7 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 				continue
 			}
 
-			key = "owned_by"
+			key = "owned_by_id"
 
 			if value[0] == "false" {
 				whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
