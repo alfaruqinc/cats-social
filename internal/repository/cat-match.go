@@ -16,6 +16,7 @@ type CatMatchRepository interface {
 	DeleteCatMatchByID(ctx context.Context, tx *sql.Tx, id string) error
 	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
 	ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error
+	RejectCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error
 	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 	CheckIfUserIsReceiver(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
@@ -261,4 +262,14 @@ func (c *catMatchRepository) CheckIfUserIsReceiver(ctx context.Context, tx *sql.
 	}
 
 	return exists, nil
+}
+
+func (c *catMatchRepository) RejectCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error {
+	query := `UPDATE cat_matches SET status = 'rejected' WHERE id = $1`
+	_, err := tx.ExecContext(ctx, query, matchId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
