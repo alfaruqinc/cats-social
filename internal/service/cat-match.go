@@ -138,5 +138,20 @@ func (c *catMatchService) DeleteCatMatchByID(ctx context.Context, id string, use
 }
 
 func (c *catMatchService) ApproveCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr {
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.NewInternalServerError("Failed to start transaction")
+	}
+	defer tx.Rollback()
+
+	err = c.catMatchRepository.ApproveCatMatch(ctx, tx, userId, matchId)
+	if err != nil {
+		return domain.NewBadRequest("Failed to approve cat match request")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return domain.NewInternalServerError("Failed to commit transaction")
+	}
 	return nil
 }

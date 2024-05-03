@@ -201,5 +201,12 @@ func (c *catMatchRepository) CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, 
 }
 
 func (c *catMatchRepository) ApproveCatMatch(ctx context.Context, tx *sql.Tx, userId string, matchId string) error {
+	query := `UPDATE cat_matches SET status = 'approved' WHERE id = $1`
+
+	_, err := tx.ExecContext(ctx, query, matchId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
