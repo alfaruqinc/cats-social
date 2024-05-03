@@ -19,14 +19,16 @@ type CatMatchService interface {
 }
 
 type catMatchService struct {
-	catMatchRepository repository.CatMatchRepository
 	db                 *sql.DB
+	catMatchRepository repository.CatMatchRepository
+	catRepository      repository.CatRepository
 }
 
-func NewCatMatchService(catMatchRepository repository.CatMatchRepository, db *sql.DB) CatMatchService {
+func NewCatMatchService(db *sql.DB, catMatchRepository repository.CatMatchRepository, catRespository repository.CatRepository) CatMatchService {
 	return &catMatchService{
-		catMatchRepository: catMatchRepository,
 		db:                 db,
+		catMatchRepository: catMatchRepository,
+		catRepository:      catRespository,
 	}
 }
 

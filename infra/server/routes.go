@@ -13,7 +13,8 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 	// dependency injection
 	catMatchRepository := repository.NewCatMatchRepository()
-	catMatchService := service.NewCatMatchService(catMatchRepository, s.db)
+	catRepository := repository.NewCatRepository()
+	catMatchService := service.NewCatMatchService(s.db, catMatchRepository, catRepository)
 	catMatchHandler := handler.NewCatMatchHandler(catMatchService)
 
 	r := gin.Default()
