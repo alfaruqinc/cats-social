@@ -11,7 +11,7 @@ import (
 
 type CatMatchService interface {
 	CreateCatMatch(ctx context.Context, user *domain.User, catMatchPayload *domain.CatMatch) domain.MessageErr
-	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
+	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, userId string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
 	ApproveCatMatch(ctx context.Context, userId string, matchId string) domain.MessageErr
@@ -84,14 +84,14 @@ func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User,
 	return nil
 }
 
-func (c *catMatchService) GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr) {
+func (c *catMatchService) GetCatMatchesByIssuerOrReceiverID(ctx context.Context, userId string) ([]domain.CatMatchResponse, domain.MessageErr) {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, domain.NewBadRequest("Failed to start transaction")
 	}
 	defer tx.Rollback()
 
-	catMatches, err := c.catMatchRepository.GetCatMatchesByIssuerOrReceiverID(ctx, tx, id)
+	catMatches, err := c.catMatchRepository.GetCatMatchesByIssuerOrReceiverID(ctx, tx, userId)
 	if err != nil {
 		return nil, domain.NewBadRequest("Failed to get cat match")
 	}
@@ -104,6 +104,11 @@ func (c *catMatchService) GetCatMatchesByIssuerOrReceiverID(ctx context.Context,
 			ID:        catMatch.ID,
 			CreatedAt: catMatch.CreatedAt,
 			Message:   catMatch.Message,
+			IssuedBy: domain.UserResponse{
+				Name:      catMatch.IssuedBy.Name,
+				Email:     catMatch.IssuedBy.Email,
+				CreatedAt: catMatch.CreatedAt,
+			},
 			MatchCat: domain.CatResponse{
 				ID:          catMatch.MatchCat.ID,
 				Name:        catMatch.MatchCat.Name,

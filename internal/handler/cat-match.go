@@ -64,8 +64,10 @@ func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 
 func (c *catMatchHandler) GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// TODO: get id of user from token
-		result, err := c.catMatchService.GetCatMatchesByIssuerOrReceiverID(ctx, "")
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		result, err := c.catMatchService.GetCatMatchesByIssuerOrReceiverID(ctx, user.Id.String())
 		if err != nil {
 			ctx.JSON(err.Status(), gin.H{
 				"message": err.Message(),
