@@ -183,7 +183,7 @@ func HandleDeleteCat(db *sql.DB) gin.HandlerFunc {
 			panic(err)
 		}
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, gin.H{"message": "success delete cat"})
 	}
 }
 
