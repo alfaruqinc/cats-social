@@ -19,9 +19,26 @@ var CatMatchStatuses = []string{
 }
 
 type CreateCatMatchRequest struct {
-	UserCatID  uuid.UUID `json:"userCatId" validate:"required"`
-	MatchCatID uuid.UUID `json:"matchCatId" validate:"required"`
-	Message    string    `json:"message" validate:"required"`
+	UserCatID  string `json:"userCatId" validate:"required"`
+	MatchCatID string `json:"matchCatId" validate:"required"`
+	Message    string `json:"message" validate:"required"`
+}
+
+func NewCatMatchFromBody(body CreateCatMatchRequest) *CatMatch {
+	id := uuid.New()
+	createdAt := time.Now().Format(time.RFC3339)
+	parsedCreatedAt, _ := time.Parse(time.RFC3339, createdAt)
+
+	parsedMatchCatId, _ := uuid.Parse(body.MatchCatID)
+	parsedUserCatId, _ := uuid.Parse(body.UserCatID)
+
+	return &CatMatch{
+		ID:         id,
+		CreatedAt:  parsedCreatedAt,
+		MatchCatID: parsedMatchCatId,
+		UserCatID:  parsedUserCatId,
+		Message:    body.Message,
+	}
 }
 
 type CatMatch struct {
