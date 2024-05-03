@@ -203,11 +203,15 @@ func (c *CatRepositoryImpl) CheckBothCatExists(ctx context.Context, tx *sql.Tx, 
 	query := `
 		SELECT EXISTS (
 			SELECT 1
-			FROM cats c1
-				JOIN cats c2 on c2.id != c1.id
-			WHERE c1.id = $1
-				AND c2.id = $2
-		)
+			FROM cats
+			WHERE id = $1
+				AND deleted = false
+		) AND EXISTS (
+			SELECT 1
+			FROM cats
+			WHERE id = $2
+				AND deleted = false
+		) as bothExists
 	`
 	var bothExists bool
 	err := tx.QueryRowContext(ctx, query, cat1Id, cat2Id).Scan(&bothExists)
