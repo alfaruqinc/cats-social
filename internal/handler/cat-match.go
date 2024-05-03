@@ -50,7 +50,7 @@ func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 			return
 		}
 
-		err := c.catMatchService.CreateCatMatch(ctx, body)
+		err := c.catMatchService.CreateCatMatch(ctx, user, body)
 		if err, ok := err.(domain.MessageErr); ok {
 			ctx.JSON(err.Status(), err)
 			return

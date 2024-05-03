@@ -10,7 +10,7 @@ import (
 )
 
 type CatMatchService interface {
-	CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) domain.MessageErr
+	CreateCatMatch(ctx context.Context, user *domain.User, catMatchPayload *domain.CatMatch) domain.MessageErr
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
@@ -32,12 +32,20 @@ func NewCatMatchService(db *sql.DB, catMatchRepository repository.CatMatchReposi
 	}
 }
 
-func (c *catMatchService) CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) domain.MessageErr {
+func (c *catMatchService) CreateCatMatch(ctx context.Context, user *domain.User, catMatchPayload *domain.CatMatch) domain.MessageErr {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.NewBadRequest("Failed to start transaction")
 	}
 	defer tx.Rollback()
+
+	owner, err := c.catRepository.CheckOwnerCat(tx, catMatchPayload.UserCatID, user.Id)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if !owner {
+		return domain.NewNotFoundError("You are not the cat's owner")
+	}
 
 	_, err = c.catMatchRepository.CreateCatMatch(ctx, tx, catMatchPayload)
 	if err != nil {

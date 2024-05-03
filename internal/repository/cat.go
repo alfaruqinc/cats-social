@@ -15,7 +15,7 @@ type CatRepository interface {
 	DeleteCat(db *sql.DB, catId uuid.UUID) error
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
-	CheckOwnerCat(tx *sql.Tx, catId string, userId uuid.UUID) (bool, error)
+	CheckOwnerCat(tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
 }
 
 type CatRepositoryImpl struct{}
@@ -123,7 +123,7 @@ func (c *CatRepositoryImpl) CheckEditableSex(db *sql.DB, cat *domain.Cat) error 
 	return nil
 }
 
-func (c *CatRepositoryImpl) CheckOwnerCat(tx *sql.Tx, catId string, userId uuid.UUID) (bool, error) {
+func (c *CatRepositoryImpl) CheckOwnerCat(tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {
 	queryCheckCatId := `
 		SELECT EXISTS (
 			SELECT 1
