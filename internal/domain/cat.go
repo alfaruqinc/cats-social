@@ -25,9 +25,9 @@ type Cat struct {
 	AgeInMonth  int32     `json:"ageInMonth" db:"age_in_month"`
 	Description string    `json:"description" db:"description"`
 	ImageUrls   []string  `json:"imageUrls" db:"image_urls"`
-	HasMatched  bool      `json:"has_matched" db:"has_matched"`
+	HasMatched  bool      `json:"hasMatched" db:"has_matched"`
 	OwnedById   uuid.UUID `json:"-" db:"owned_by_id"`
-	OwnedBy     User
+	OwnedBy     User      `json:"-"`
 }
 
 type CreateCatResponse struct {
