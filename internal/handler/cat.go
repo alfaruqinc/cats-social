@@ -251,7 +251,7 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 				continue
 			}
 
-			key = "owned_by"
+			key = "owned_by_id"
 
 			if value[0] == "false" {
 				whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
