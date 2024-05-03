@@ -5,12 +5,14 @@ import (
 	"cats-social/internal/repository"
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 type CatMatchService interface {
 	CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
-	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (*domain.CatMatchResponse, domain.MessageErr)
+	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
 }
 
@@ -94,8 +96,30 @@ func (c *catMatchService) GetCatMatchesByIssuerOrReceiverID(ctx context.Context,
 	return catMatchResponses, nil
 }
 
-func (c *catMatchService) UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (*domain.CatMatchResponse, domain.MessageErr) {
-	return nil, nil
+func (c *catMatchService) UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr) {
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", domain.NewInternalServerError("Failed to start transaction")
+	}
+	defer tx.Rollback()
+
+	// TODO check if the cat match request is exist
+
+	matchCatID, err := uuid.Parse(id)
+	if err != nil {
+		return "", domain.NewBadRequest("Invalid cat match id")
+	}
+
+	err = c.catMatchRepository.UpdateCatMatchByID(ctx, tx, matchCatID.String(), catMatchPayload)
+	if err != nil {
+		return "", domain.NewInternalServerError("Failed to update cat match")
+	}
+
+	// TODO: Delete All cat match request that has status pending
+
+	tx.Commit()
+
+	return "successfully matches the cat match request", nil
 }
 
 func (c *catMatchService) DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr {
