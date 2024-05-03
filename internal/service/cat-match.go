@@ -10,7 +10,7 @@ import (
 )
 
 type CatMatchService interface {
-	CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
+	CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) domain.MessageErr
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr)
 	UpdateCatMatchByID(ctx context.Context, id string, catMatchPayload *domain.CatMatch) (string, domain.MessageErr)
 	DeleteCatMatchByID(ctx context.Context, id string, userId string) domain.MessageErr
@@ -30,24 +30,24 @@ func NewCatMatchService(catMatchRepository repository.CatMatchRepository, db *sq
 	}
 }
 
-func (c *catMatchService) CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) (string, domain.MessageErr) {
+func (c *catMatchService) CreateCatMatch(ctx context.Context, catMatchPayload *domain.CatMatch) domain.MessageErr {
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", domain.NewBadRequest("Failed to start transaction")
+		return domain.NewBadRequest("Failed to start transaction")
 	}
 	defer tx.Rollback()
 
 	_, err = c.catMatchRepository.CreateCatMatch(ctx, tx, catMatchPayload)
 	if err != nil {
-		return "", domain.NewBadRequest("Failed to create cat match")
+		return domain.NewBadRequest("Failed to create cat match")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return "", domain.NewBadRequest("Failed to commit transaction")
+		return domain.NewBadRequest("Failed to commit transaction")
 	}
 
-	return "successfully send match request", nil
+	return nil
 }
 
 func (c *catMatchService) GetCatMatchesByIssuerOrReceiverID(ctx context.Context, id string) ([]domain.CatMatchResponse, domain.MessageErr) {
