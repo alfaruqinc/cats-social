@@ -26,7 +26,8 @@ type Cat struct {
 	Description string    `json:"description" db:"description"`
 	ImageUrls   []string  `json:"imageUrls" db:"image_urls"`
 	HasMatched  bool      `json:"has_matched" db:"has_matched"`
-	OwnedBy     uuid.UUID `json:"-" db:"owned_by"`
+	OwnedById   uuid.UUID `json:"-" db:"owned_by_id"`
+	OwnedBy     User
 }
 
 type CreateCatResponse struct {

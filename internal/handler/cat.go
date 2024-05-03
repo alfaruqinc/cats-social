@@ -34,7 +34,7 @@ func HandleAddNewCat(db *sql.DB) gin.HandlerFunc {
 
 		// TODO: delete after auth api finish
 		parsed, _ := uuid.Parse("e91ce26e-9a53-4c4f-b5b5-0cad1a61d82b")
-		catBody.OwnedBy = parsed
+		catBody.OwnedById = parsed
 
 		err = repository.NewCatRepository().CreateCat(db, catBody)
 		if err != nil {
