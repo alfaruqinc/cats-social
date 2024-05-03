@@ -28,12 +28,12 @@ func NewCatMatchRepository() CatMatchRepository {
 }
 
 func (c *catMatchRepository) CreateCatMatch(ctx context.Context, tx *sql.Tx, catMatch *domain.CatMatch) (*domain.CatMatch, error) {
-	query := `INSERT INTO cat_matches (id, created_at, issued_by_id, match_cat_id, user_cat_id, message, status) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	query := `INSERT INTO cat_matches (id, created_at, issued_by_id, match_cat_id, user_cat_id, message) 
+	VALUES ($1, $2, $3, $4, $5, $6)`
 
-	_, err := tx.ExecContext(ctx, query)
+	_, err := tx.ExecContext(ctx, query, catMatch.ID, catMatch.CreatedAt, catMatch.IssuedByID, catMatch.MatchCatID, catMatch.UserCatID, catMatch.Message)
 	if err != nil {
-		return &domain.CatMatch{}, err
+		return nil, err
 	}
 
 	return nil, nil

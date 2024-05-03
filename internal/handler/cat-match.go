@@ -13,8 +13,6 @@ import (
 type CatMatchHandler interface {
 	CreateCatMatch() gin.HandlerFunc
 	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
-	ApproveCatMatchByID() gin.HandlerFunc
-	RejectCatMatchByID() gin.HandlerFunc
 	DeleteCatMatchByID() gin.HandlerFunc
 	ApproveCatMatch() gin.HandlerFunc
 	RejectCatMatch() gin.HandlerFunc
@@ -32,17 +30,34 @@ func NewCatMatchHandler(catMatchService service.CatMatchService) CatMatchHandler
 
 func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		result, err := c.catMatchService.CreateCatMatch(ctx, nil)
-		if err != nil {
-			ctx.JSON(err.Status(), gin.H{
-				"message": err.Message(),
-			})
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
 
+		body := domain.NewCatMatch()
+		if err := ctx.ShouldBindJSON(&body); err != nil {
+			uuidErr := uuid.IsInvalidLengthError(err)
+			if uuidErr {
+				ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("user or match cat is not found"))
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			return
+		}
+		body.IssuedByID = user.Id
+
+		if len(body.Message) < 5 || len(body.Message) > 120 {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("message at least 5 and maximum 120 characters"))
+			return
+		}
+
+		err := c.catMatchService.CreateCatMatch(ctx, body)
+		if err, ok := err.(domain.MessageErr); ok {
+			ctx.JSON(err.Status(), err)
 			return
 		}
 
 		ctx.JSON(http.StatusCreated, gin.H{
-			"message": result,
+			"message": "success create cat match",
 		})
 	}
 }
@@ -62,58 +77,6 @@ func (c *catMatchHandler) GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc {
 		ctx.JSON(200, gin.H{
 			"data":    result,
 			"message": "success",
-		})
-	}
-}
-
-func (c *catMatchHandler) ApproveCatMatchByID() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		catMatchId := ctx.Param("id")
-
-		matchCatID, err := uuid.Parse(catMatchId)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Invalid cat match id"))
-		}
-
-		result, err := c.catMatchService.UpdateCatMatchByID(ctx, matchCatID.String(), &domain.CatMatch{
-			Status: domain.CatMatchStatusAccepted,
-		})
-		if err != nil {
-			ctx.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
-
-		ctx.JSON(200, gin.H{
-			"message": result,
-		})
-	}
-}
-
-func (c *catMatchHandler) RejectCatMatchByID() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		catMatchId := ctx.Param("id")
-
-		matchCatID, err := uuid.Parse(catMatchId)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Invalid cat match id"))
-		}
-
-		result, err := c.catMatchService.UpdateCatMatchByID(ctx, matchCatID.String(), &domain.CatMatch{
-			Status: domain.CatMatchStatusRejected,
-		})
-		if err != nil {
-			ctx.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-
-			return
-		}
-
-		ctx.JSON(200, gin.H{
-			"data":    result,
-			"message": "Cat Match Request is Rejected",
 		})
 	}
 }
@@ -189,7 +152,6 @@ func (c *catMatchHandler) RejectCatMatch() gin.HandlerFunc {
 
 		_, err := uuid.Parse(body.MatchId)
 		if err != nil {
-			fmt.Println(err)
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
 			return
 		}

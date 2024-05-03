@@ -12,13 +12,11 @@ var (
 	CatMatchStatusRejected = "rejected"
 )
 
-var (
-	CatMatchStatuses = []string{
-		CatMatchStatusPending,
-		CatMatchStatusAccepted,
-		CatMatchStatusRejected,
-	}
-)
+var CatMatchStatuses = []string{
+	CatMatchStatusPending,
+	CatMatchStatusAccepted,
+	CatMatchStatusRejected,
+}
 
 type CreateCatMatchRequest struct {
 	UserCatID  uuid.UUID `json:"userCatId" validate:"required"`
@@ -45,4 +43,15 @@ type CatMatchResponse struct {
 	UserCat   CatResponse `json:"userCatDetail"`
 	Message   string      `json:"message"`
 	CreatedAt time.Time   `json:"createdAt"`
+}
+
+func NewCatMatch() *CatMatch {
+	id := uuid.New()
+	createdAt := time.Now().Format(time.RFC3339)
+	parsedCreatedAt, _ := time.Parse(time.RFC3339, createdAt)
+
+	return &CatMatch{
+		ID:        id,
+		CreatedAt: parsedCreatedAt,
+	}
 }
