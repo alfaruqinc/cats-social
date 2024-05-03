@@ -13,11 +13,13 @@ type CatMatchRepository interface {
 	GetCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (*domain.CatMatch, error)
 	GetCatMatchesByIssuerOrReceiverID(ctx context.Context, tx *sql.Tx, id string) ([]domain.CatMatch, error)
 	UpdateCatMatchByID(ctx context.Context, tx *sql.Tx, id string, catMatch *domain.CatMatch) error
-	DeleteCatMatch(ctx context.Context, tx *sql.Tx, id string) error
+	DeleteCatMatchByID(ctx context.Context, tx *sql.Tx, id string) error
+	GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error)
+	ApproveCatMatchByMatchCatID(ctx context.Context, tx *sql.Tx, userId string, matchCatchId string) error
+	CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error)
 }
 
-type catMatchRepository struct {
-}
+type catMatchRepository struct{}
 
 func NewCatMatchRepository() CatMatchRepository {
 	return &catMatchRepository{}
@@ -160,7 +162,7 @@ func (c *catMatchRepository) UpdateCatMatchByID(ctx context.Context, tx *sql.Tx,
 	return nil
 }
 
-func (c *catMatchRepository) DeleteCatMatch(ctx context.Context, tx *sql.Tx, id string) error {
+func (c *catMatchRepository) DeleteCatMatchByID(ctx context.Context, tx *sql.Tx, id string) error {
 	query := `DELETE FROM cat_matches WHERE id = $1`
 
 	_, err := tx.ExecContext(ctx, query, id)
@@ -168,5 +170,36 @@ func (c *catMatchRepository) DeleteCatMatch(ctx context.Context, tx *sql.Tx, id 
 		return err
 	}
 
+	return nil
+}
+
+func (c *catMatchRepository) GetStatusCatMatchByID(ctx context.Context, tx *sql.Tx, id string) (string, error) {
+	query := `SELECT status FROM cat_matches WHERE id = $1`
+
+	var status string
+	err := tx.QueryRowContext(ctx, query, id).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+
+	return status, nil
+}
+
+func (c *catMatchRepository) CanDeleteCatMatch(ctx context.Context, tx *sql.Tx, id string, userId string) (bool, error) {
+	query := `SELECT issued_by_id = $2 FROM cat_matches WHERE id = $1`
+
+	var canDelete bool
+	err := tx.QueryRowContext(ctx, query, id, userId).Scan(&canDelete)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return canDelete, nil
+}
+
+func (c *catMatchRepository) ApproveCatMatchByMatchCatID(ctx context.Context, tx *sql.Tx, userId string, matchCatchId string) error {
 	return nil
 }

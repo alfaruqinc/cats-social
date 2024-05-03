@@ -1,17 +1,21 @@
 package handler
 
 import (
+	"cats-social/internal/domain"
 	"cats-social/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type CatMatchHandler interface {
 	CreateCatMatch() gin.HandlerFunc
 	GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc
-	UpdateCatMatchByID() gin.HandlerFunc
-	DeleteCatMatch() gin.HandlerFunc
+	ApproveCatMatchByID() gin.HandlerFunc
+	RejectCatMatchByID() gin.HandlerFunc
+	DeleteCatMatchByID() gin.HandlerFunc
+	ApproveCatMatchByMatchCatID() gin.HandlerFunc
 }
 
 type catMatchHandler struct {
@@ -55,23 +59,106 @@ func (c *catMatchHandler) GetCatMatchesByIssuerOrReceiverID() gin.HandlerFunc {
 
 		ctx.JSON(200, gin.H{
 			"data":    result,
-			"message": "Get Cat Match By ID",
+			"message": "success",
 		})
 	}
 }
 
-func (c *catMatchHandler) UpdateCatMatchByID() gin.HandlerFunc {
+func (c *catMatchHandler) ApproveCatMatchByID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		catMatchId := ctx.Param("id")
+
+		matchCatID, err := uuid.Parse(catMatchId)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Invalid cat match id"))
+		}
+
+		result, err := c.catMatchService.UpdateCatMatchByID(ctx, matchCatID.String(), &domain.CatMatch{
+			Status: domain.CatMatchStatusAccepted,
+		})
+		if err != nil {
+			ctx.JSON(400, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
 		ctx.JSON(200, gin.H{
-			"message": "Update Cat Match By ID",
+			"message": result,
 		})
 	}
 }
 
-func (c *catMatchHandler) DeleteCatMatch() gin.HandlerFunc {
+func (c *catMatchHandler) RejectCatMatchByID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		catMatchId := ctx.Param("id")
+
+		matchCatID, err := uuid.Parse(catMatchId)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("Invalid cat match id"))
+		}
+
+		result, err := c.catMatchService.UpdateCatMatchByID(ctx, matchCatID.String(), &domain.CatMatch{
+			Status: domain.CatMatchStatusRejected,
+		})
+		if err != nil {
+			ctx.JSON(400, gin.H{
+				"message": err.Error(),
+			})
+
+			return
+		}
+
 		ctx.JSON(200, gin.H{
-			"message": "Delete Cat Match",
+			"data":    result,
+			"message": "Cat Match Request is Rejected",
+		})
+	}
+}
+
+func (c *catMatchHandler) DeleteCatMatchByID() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		catMatchId := ctx.Param("id")
+
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		_, err := uuid.Parse(catMatchId)
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
+		}
+
+		err = c.catMatchService.DeleteCatMatchByID(ctx, catMatchId, user.Id.String())
+		if err, ok := err.(domain.MessageErr); ok {
+			ctx.JSON(err.Status(), err)
+			return
+		}
+
+		ctx.JSON(200, gin.H{
+			"message": "success delete cat match request",
+		})
+	}
+}
+
+func (c *catMatchHandler) ApproveCatMatchByMatchCatID() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		var body domain.CatMatch
+		if err := ctx.ShouldBindJSON(&body); err != nil {
+			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			panic(err)
+		}
+
+		err := c.catMatchService.ApproveCatMatchByMatchCatID(ctx, user.Id.String(), body.MatchCatID.String())
+		if err, ok := err.(domain.MessageErr); ok {
+			ctx.JSON(err.Status(), err)
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{
+			"message": "success approve cat match",
 		})
 	}
 }

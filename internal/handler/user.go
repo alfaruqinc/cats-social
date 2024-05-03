@@ -80,6 +80,7 @@ func HandleLogin(db *sql.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("email has been used"))
 			return
 		}
+		userBody.Id = user.Id
 
 		isValidPassword := user.ComparePassword(userBody.Password)
 		if !isValidPassword {
