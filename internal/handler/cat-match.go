@@ -35,17 +35,24 @@ func (c *catMatchHandler) CreateCatMatch() gin.HandlerFunc {
 
 		body := domain.NewCatMatch()
 		if err := ctx.ShouldBindJSON(&body); err != nil {
+			uuidErr := uuid.IsInvalidLengthError(err)
+			if uuidErr {
+				ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("user or match cat is not found"))
+				return
+			}
 			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
+			return
 		}
-
 		body.IssuedByID = user.Id
 
-		err := c.catMatchService.CreateCatMatch(ctx, body)
-		if err != nil {
-			ctx.JSON(err.Status(), gin.H{
-				"message": err.Message(),
-			})
+		if len(body.Message) < 5 || len(body.Message) > 120 {
+			ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("message at least 5 and maximum 120 characters"))
+			return
+		}
 
+		err := c.catMatchService.CreateCatMatch(ctx, body)
+		if err, ok := err.(domain.MessageErr); ok {
+			ctx.JSON(err.Status(), err)
 			return
 		}
 
