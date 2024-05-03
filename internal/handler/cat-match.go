@@ -106,7 +106,13 @@ func (c *catMatchHandler) ApproveCatMatch() gin.HandlerFunc {
 			panic(err)
 		}
 
-		err := c.catMatchService.ApproveCatMatchByMatchCatID(ctx, user.Id.String(), body.MatchCatID.String())
+		_, err := uuid.Parse(body.MatchCatID.String())
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
+			return
+		}
+
+		err = c.catMatchService.ApproveCatMatch(ctx, user.Id.String(), body.MatchCatID.String())
 		if err, ok := err.(domain.MessageErr); ok {
 			ctx.JSON(err.Status(), err)
 			return
