@@ -127,13 +127,17 @@ func (c *catMatchHandler) ApproveCatMatch() gin.HandlerFunc {
 			MatchId string `json:"matchId"`
 		}{}
 		if err := ctx.ShouldBindJSON(&body); err != nil {
+			if len(body.MatchId) < 1 {
+				ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("matchId is required"))
+				return
+			}
+
 			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
 			panic(err)
 		}
 
 		_, err := uuid.Parse(body.MatchId)
 		if err != nil {
-			fmt.Println(err)
 			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("Cat match request is not found"))
 			return
 		}
@@ -159,6 +163,11 @@ func (c *catMatchHandler) RejectCatMatch() gin.HandlerFunc {
 			MatchId string `json:"matchId"`
 		}{}
 		if err := ctx.ShouldBindJSON(&body); err != nil {
+			if len(body.MatchId) < 1 {
+				ctx.JSON(http.StatusBadRequest, domain.NewBadRequest("matchId is required"))
+				return
+			}
+
 			ctx.JSON(http.StatusInternalServerError, domain.NewInternalServerError("something went wrong"))
 			panic(err)
 		}
