@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS
         email VARCHAR(100) NOT NULL,
         name VARCHAR(100) NOT NULL,
         password TEXT NOT NULL,
-        createdAt TIMESTAMPTZ DEFAULT now(),
+        created_at TIMESTAMPTZ DEFAULT now(),
             CONSTRAINT
                 unique_email
                     UNIQUE(email)
