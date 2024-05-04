@@ -144,7 +144,7 @@ func (c *catMatchHandler) ApproveCatMatch() gin.HandlerFunc {
 			return
 		}
 
-		ctx.JSON(http.StatusCreated, gin.H{
+		ctx.JSON(http.StatusOK, gin.H{
 			"message": "success approve cat match",
 		})
 	}
@@ -175,7 +175,7 @@ func (c *catMatchHandler) RejectCatMatch() gin.HandlerFunc {
 			return
 		}
 
-		ctx.JSON(http.StatusCreated, gin.H{
+		ctx.JSON(http.StatusOK, gin.H{
 			"message": "success reject cat match",
 		})
 	}
