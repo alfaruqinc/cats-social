@@ -8,7 +8,7 @@ import (
 )
 
 type CatService interface {
-	CreateCat(cat *domain.Cat) error
+	CreateCat(cat *domain.Cat) domain.MessageErr
 	GetAllCats(user *domain.User, queryParams url.Values) ([]domain.Cat, domain.MessageErr)
 }
 
@@ -24,8 +24,13 @@ func NewCatService(db *sql.DB, catRepository repository.CatRepository) CatServic
 	}
 }
 
-func (c *catService) CreateCat(cat *domain.Cat) error {
-	return c.catRepository.CreateCat(c.db, cat)
+func (c *catService) CreateCat(cat *domain.Cat) domain.MessageErr {
+	err := c.catRepository.CreateCat(c.db, cat)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+
+	return nil
 }
 
 func (c *catService) GetAllCats(user *domain.User, queryParams url.Values) ([]domain.Cat, domain.MessageErr) {

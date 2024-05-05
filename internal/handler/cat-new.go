@@ -44,8 +44,11 @@ func (c *catHandler) CreateCat() gin.HandlerFunc {
 
 		err = c.catSerivce.CreateCat(catBody)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, "something went wrong")
-			panic(err)
+			err, _ := err.(domain.MessageErr)
+			ctx.JSON(err.Status(), err)
+			if err.Status() > 499 {
+				panic(err)
+			}
 		}
 
 		res := &domain.CreateCatResponse{
