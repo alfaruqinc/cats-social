@@ -59,7 +59,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	cat.Use(auth.NewAuth(repository.NewUserPg()).Authentication(s.db))
 
 	cat.POST("", catHandler.CreateCat())
-	cat.GET("", handler.HandleGetAllCats(s.db))
+	cat.GET("", catHandler.GetAllCats())
 	cat.PUT(":catId", handler.HandleUpdateCat(s.db))
 	cat.DELETE(":catId", handler.HandleDeleteCat(s.db))
 

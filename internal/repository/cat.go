@@ -5,13 +5,19 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"net/url"
+	"regexp"
+	"slices"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type CatRepository interface {
 	CreateCat(db *sql.DB, cat *domain.Cat) error
-	GetAllCats(db *sql.DB) ([]domain.Cat, error)
+	GetAllCats(db *sql.DB, user *domain.User, queryParams url.Values) ([]domain.Cat, error)
 	UpdateCat(db *sql.DB, cat *domain.Cat) error
 	DeleteCat(db *sql.DB, catId uuid.UUID) error
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
@@ -41,8 +47,44 @@ func (c *catRepository) CreateCat(db *sql.DB, catBody *domain.Cat) error {
 	return nil
 }
 
-func (c *catRepository) GetAllCats(db *sql.DB) ([]domain.Cat, error) {
-	return nil, nil
+func (c *catRepository) GetAllCats(db *sql.DB, user *domain.User, queryParams url.Values) ([]domain.Cat, error) {
+	query := `
+		SELECT id, name, race, sex,
+			age_in_month, image_urls, description,
+			created_at, has_matched
+		FROM cats
+		WHERE deleted = false
+		`
+
+	whereClause, limitOffsetClause, args := validateGetAllCatsQueryParams(queryParams, user.Id.String())
+
+	if len(whereClause) > 0 {
+		query += "AND " + strings.Join(whereClause, " AND ")
+	}
+	query += "\n" + "ORDER BY created_at DESC"
+	query += "\n" + strings.Join(limitOffsetClause, " ")
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	cats := []domain.Cat{}
+	m := pgtype.NewMap()
+
+	for rows.Next() {
+		cat := domain.Cat{}
+
+		err = rows.Scan(&cat.ID, &cat.Name, &cat.Race, &cat.Sex, &cat.AgeInMonth, m.SQLScanner(&cat.ImageUrls), &cat.Description, &cat.CreatedAt, &cat.HasMatched)
+		if err != nil {
+			return nil, err
+		}
+
+		cats = append(cats, cat)
+	}
+
+	return cats, nil
 }
 
 func (c *catRepository) UpdateCat(db *sql.DB, cat *domain.Cat) error {
@@ -220,4 +262,90 @@ func (c *catRepository) CheckBothCatExists(ctx context.Context, tx *sql.Tx, cat1
 	}
 
 	return bothExists, nil
+}
+
+func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]string, []string, []any) {
+	var limitOffsetClause []string
+	var whereClause []string
+	var args []any
+
+	for key, value := range queryParams {
+		undefinedParam := slices.Contains(domain.CatQueryParams, key) != true
+		limitOffset := key == "limit" || key == "offset"
+		emptyValue := len(value[0]) < 1
+
+		if limitOffset {
+			limitOffsetClause = append(limitOffsetClause, fmt.Sprintf("%s $%d", key, len(args)+1))
+
+			if key == "limit" && emptyValue {
+				value[0] = "5"
+			}
+			if key == "offset" && emptyValue {
+				value[0] = "0"
+			}
+
+			args = append(args, value[0])
+			continue
+		}
+
+		qParamsToSkip := undefinedParam || limitOffset || emptyValue
+		if qParamsToSkip {
+			continue
+		}
+
+		if key == "id" {
+			_, err := uuid.Parse(value[0])
+			if err != nil {
+				continue
+			}
+		}
+
+		if key == "hasMatched" {
+			key = "has_matched"
+		}
+
+		if key == "ageInMonth" {
+			key = "age_in_month"
+
+			// regex to extract operator (>,=,<) and number
+			extractOperatorAndNumber := regexp.MustCompile(`([>=<])(\d+)`)
+			matches := extractOperatorAndNumber.FindStringSubmatch(value[0])
+			if len(matches) != 3 {
+				continue
+			}
+
+			opr := matches[1]
+			val := matches[2]
+
+			whereClause = append(whereClause, fmt.Sprintf("%s %s $%d", key, opr, len(args)+1))
+			args = append(args, val)
+
+			continue
+		}
+
+		if key == "owned" {
+			if value[0] != "true" && value[0] != "false" {
+				continue
+			}
+
+			key = "owned_by_id"
+
+			if value[0] == "false" {
+				whereClause = append(whereClause, fmt.Sprintf("%s != $%d", key, len(args)+1))
+				args = append(args, userId)
+				continue
+			}
+
+			value[0] = userId
+		}
+
+		if key == "search" {
+			key = "name"
+		}
+
+		whereClause = append(whereClause, fmt.Sprintf("%s = $%d", key, len(args)+1))
+		args = append(args, value[0])
+	}
+
+	return whereClause, limitOffsetClause, args
 }

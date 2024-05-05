@@ -10,6 +10,7 @@ import (
 
 type CatHandler interface {
 	CreateCat() gin.HandlerFunc
+	GetAllCats() gin.HandlerFunc
 }
 
 type catHandler struct {
@@ -53,5 +54,22 @@ func (c *catHandler) CreateCat() gin.HandlerFunc {
 		}
 
 		ctx.JSON(http.StatusCreated, gin.H{"message": "success", "data": res})
+	}
+}
+
+func (c *catHandler) GetAllCats() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		cats, err := c.catSerivce.GetAllCats(user, ctx.Request.URL.Query())
+		if err != nil {
+			ctx.JSON(err.Status(), err)
+			if err.Status() > 499 {
+				panic(err)
+			}
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"message": "success", "data": &cats})
 	}
 }
