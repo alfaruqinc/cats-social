@@ -60,7 +60,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	cat.POST("", catHandler.CreateCat())
 	cat.GET("", catHandler.GetAllCats())
-	cat.PUT(":catId", handler.HandleUpdateCat(s.db))
+	cat.PUT(":catId", catHandler.UpdateCat())
 	cat.DELETE(":catId", handler.HandleDeleteCat(s.db))
 
 	// cat match

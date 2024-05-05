@@ -20,8 +20,11 @@ type CatRepository interface {
 	GetAllCats(db *sql.DB, user *domain.User, queryParams url.Values) ([]domain.Cat, error)
 	UpdateCat(db *sql.DB, cat *domain.Cat) error
 	DeleteCat(db *sql.DB, catId uuid.UUID) error
+	// TODO: delete after refactor complete
 	CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error
+	CheckCatExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) (bool, error)
 	CheckEditableSex(db *sql.DB, cat *domain.Cat) error
+	CheckEditableSexV2(db *sql.DB, cat *domain.Cat) (bool, error)
 	CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error)
 	CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 	CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
@@ -145,6 +148,26 @@ func (c *catRepository) CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uui
 	return nil
 }
 
+func (c *catRepository) CheckCatExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) (bool, error) {
+	queryCheckCatId := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM cats
+			WHERE id = $1 
+				AND owned_by_id = $2
+				AND deleted = false
+		)
+	`
+	var exists bool
+	row := db.QueryRow(queryCheckCatId, catId, userId)
+	err := row.Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func (c *catRepository) CheckEditableSex(db *sql.DB, cat *domain.Cat) error {
 	queryCheckCatId := `
 		SELECT (sex != $1) as sex_diff, NOT EXISTS (
@@ -168,6 +191,27 @@ func (c *catRepository) CheckEditableSex(db *sql.DB, cat *domain.Cat) error {
 	}
 
 	return nil
+}
+
+func (c *catRepository) CheckEditableSexV2(db *sql.DB, cat *domain.Cat) (bool, error) {
+	queryCheckCatId := `
+		SELECT (sex != $1) as sex_diff, NOT EXISTS (
+			SELECT 1
+			FROM cat_matches
+			WHERE user_cat_id = $2
+		) as can_edit
+		FROM cats
+		WHERE id = $2
+	`
+	var sexDiff bool
+	var canEdit bool
+	row := db.QueryRow(queryCheckCatId, cat.Sex, cat.ID)
+	err := row.Scan(&sexDiff, &canEdit)
+	if err != nil {
+		return false, err
+	}
+
+	return sexDiff && !canEdit, nil
 }
 
 func (c *catRepository) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {

@@ -4,7 +4,6 @@ import (
 	"cats-social/internal/domain"
 	"cats-social/internal/repository"
 	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -271,50 +270,4 @@ func validateGetAllCatsQueryParams(queryParams url.Values, userId string) ([]str
 	}
 
 	return whereClause, limitOffsetClause, args
-}
-
-func validateRequestBody(body domain.Cat) error {
-	if len(body.Name) < 1 || len(body.Name) > 30 {
-		err := errors.New("name length should be between 1 and 30 characters")
-		return err
-	}
-
-	if slices.Contains(domain.CatRace, body.Race) != true {
-		err := errors.New("accepted race is only Persian, Maine Coon, Siamese, Ragdoll, Bengal, Sphynx, British Shorthair, Abyssinian, Scottish Fold, Birman")
-		return err
-	}
-
-	if slices.Contains(domain.CatSex, body.Sex) != true {
-		err := errors.New("accepted sex is only male and female")
-		return err
-	}
-
-	if body.AgeInMonth < 1 || body.AgeInMonth > 120082 {
-		err := errors.New("your cat's age is minimum 1 month and maximum 120082 month")
-		return err
-	}
-
-	if len(body.Description) < 1 || len(body.Description) > 200 {
-		err := errors.New("description length should be between 1 and 200 characters")
-		return err
-	}
-
-	if len(body.ImageUrls) < 1 {
-		err := errors.New("image urls at least have 1 image")
-		return err
-	}
-
-	for _, imageUrl := range body.ImageUrls {
-		if len(imageUrl) < 1 {
-			err := errors.New("image urls cannot have empty item")
-			return err
-		}
-
-		_, err := url.ParseRequestURI(imageUrl)
-		if err != nil {
-			err := errors.New("image url should have valid url")
-			return err
-		}
-	}
-	return nil
 }
