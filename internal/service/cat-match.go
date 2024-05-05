@@ -160,8 +160,6 @@ func (c *catMatchService) UpdateCatMatchByID(ctx context.Context, id string, cat
 	}
 	defer tx.Rollback()
 
-	// TODO check if the cat match request is exist
-
 	matchCatID, err := uuid.Parse(id)
 	if err != nil {
 		return "", domain.NewBadRequest("Invalid cat match id")
@@ -171,8 +169,6 @@ func (c *catMatchService) UpdateCatMatchByID(ctx context.Context, id string, cat
 	if err != nil {
 		return "", domain.NewInternalServerError("Failed to update cat match")
 	}
-
-	// TODO: Delete All cat match request that has status pending
 
 	tx.Commit()
 

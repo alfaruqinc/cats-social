@@ -55,7 +55,7 @@ func (c *catService) UpdateCat(user *domain.User, cat *domain.Cat) domain.Messag
 		return domain.NewNotFoundError("cat does not exists")
 	}
 
-	canEdit, err := c.catRepository.CheckEditableSexV2(c.db, cat)
+	canEdit, err := c.catRepository.CheckEditableSex(c.db, cat)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
 	}
