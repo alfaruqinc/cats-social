@@ -7,7 +7,7 @@ import (
 )
 
 type CatService interface {
-	CreateCat(db *sql.DB, cat *domain.Cat) error
+	CreateCat(cat *domain.Cat) error
 	GetAllCats(db *sql.DB) ([]domain.Cat, error)
 }
 
@@ -18,13 +18,13 @@ type catService struct {
 
 func NewCatService(db *sql.DB, catRepository repository.CatRepository) CatService {
 	return &catService{
-		catRepository: catRepository,
 		db:            db,
+		catRepository: catRepository,
 	}
 }
 
-func (c *catService) CreateCat(db *sql.DB, cat *domain.Cat) error {
-	return c.catRepository.CreateCat(db, cat)
+func (c *catService) CreateCat(cat *domain.Cat) error {
+	return c.catRepository.CreateCat(c.db, cat)
 }
 
 func (c *catService) GetAllCats(db *sql.DB) ([]domain.Cat, error) {
