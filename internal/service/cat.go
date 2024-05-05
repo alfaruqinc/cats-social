@@ -5,12 +5,15 @@ import (
 	"cats-social/internal/repository"
 	"database/sql"
 	"net/url"
+
+	"github.com/google/uuid"
 )
 
 type CatService interface {
 	CreateCat(cat *domain.Cat) domain.MessageErr
 	GetAllCats(user *domain.User, queryParams url.Values) ([]domain.Cat, domain.MessageErr)
 	UpdateCat(user *domain.User, cat *domain.Cat) domain.MessageErr
+	DeleteCat(user *domain.User, catId uuid.UUID) domain.MessageErr
 }
 
 type catService struct {
@@ -61,6 +64,23 @@ func (c *catService) UpdateCat(user *domain.User, cat *domain.Cat) domain.Messag
 	}
 
 	err = c.catRepository.UpdateCat(c.db, cat)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+
+	return nil
+}
+
+func (c *catService) DeleteCat(user *domain.User, catId uuid.UUID) domain.MessageErr {
+	catExists, err := c.catRepository.CheckCatExists(c.db, catId, user.Id)
+	if err != nil {
+		return domain.NewInternalServerError("something went wrong")
+	}
+	if !catExists {
+		return domain.NewNotFoundError("cat does not exists")
+	}
+
+	err = c.catRepository.DeleteCat(c.db, catId)
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
 	}

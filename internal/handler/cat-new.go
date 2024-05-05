@@ -17,6 +17,7 @@ type CatHandler interface {
 	CreateCat() gin.HandlerFunc
 	GetAllCats() gin.HandlerFunc
 	UpdateCat() gin.HandlerFunc
+	DeleteCat() gin.HandlerFunc
 }
 
 type catHandler struct {
@@ -131,6 +132,24 @@ func (c *catHandler) UpdateCat() gin.HandlerFunc {
 		}
 
 		ctx.JSON(http.StatusOK, domain.NewStatusOk("success", updatedCat))
+	}
+}
+
+func (c *catHandler) DeleteCat() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		catId := ctx.Param("catId")
+		parsedCatId, err := uuid.Parse(catId)
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, domain.NewNotFoundError("cat is not found"))
+			return
+		}
+
+		userReq, _ := ctx.Get("userData")
+		user := userReq.(*domain.User)
+
+		err = c.catSerivce.DeleteCat(user, parsedCatId)
+
+		ctx.JSON(http.StatusOK, gin.H{"message": "success delete cat"})
 	}
 }
 

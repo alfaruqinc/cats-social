@@ -61,7 +61,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	cat.POST("", catHandler.CreateCat())
 	cat.GET("", catHandler.GetAllCats())
 	cat.PUT(":catId", catHandler.UpdateCat())
-	cat.DELETE(":catId", handler.HandleDeleteCat(s.db))
+	cat.DELETE(":catId", catHandler.DeleteCat())
 
 	// cat match
 	catMatch := cat.Group("/match")
