@@ -48,7 +48,7 @@ func (c *catService) UpdateCat(user *domain.User, cat *domain.Cat) domain.Messag
 	if err != nil {
 		return domain.NewInternalServerError("something went wrong")
 	}
-	if catExists {
+	if !catExists {
 		return domain.NewNotFoundError("cat does not exists")
 	}
 
