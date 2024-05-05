@@ -5,19 +5,46 @@ import (
 	"cats-social/internal/handler"
 	"cats-social/internal/repository"
 	"cats-social/internal/service"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
+func jsonLoggerMiddleware() gin.HandlerFunc {
+	return gin.LoggerWithFormatter(
+		func(params gin.LogFormatterParams) string {
+			log := make(map[string]interface{})
+
+			log["status_code"] = params.StatusCode
+			log["path"] = params.Path
+			log["method"] = params.Method
+			log["start_time"] = params.TimeStamp.Format("2006/01/02 - 15:04:05")
+			log["remote_addr"] = params.ClientIP
+			log["response_time"] = params.Latency.String()
+
+			s, _ := json.Marshal(log)
+			return string(s) + "\n"
+		},
+	)
+}
+
 func (s *Server) RegisterRoutes() http.Handler {
 	// dependency injection
-	catMatchRepository := repository.NewCatMatchRepository()
 	catRepository := repository.NewCatRepository()
+	catMatchRepository := repository.NewCatMatchRepository()
+
+	catService := service.NewCatService(s.db, catRepository)
 	catMatchService := service.NewCatMatchService(s.db, catMatchRepository, catRepository)
+
+	catHandler := handler.NewCatHandler(catService)
 	catMatchHandler := handler.NewCatMatchHandler(catMatchService)
 
 	r := gin.Default()
+
+	// r := gin.New()
+	// r.Use(gin.Recovery())
+	// r.Use(jsonLoggerMiddleware())
 
 	// version 1
 	apiV1 := r.Group("/v1")
@@ -30,10 +57,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// cat
 	cat := apiV1.Group("/cat")
 	cat.Use(auth.NewAuth(repository.NewUserPg()).Authentication(s.db))
-	cat.GET("", handler.HandleGetAllCats(s.db))
-	cat.POST("", handler.HandleAddNewCat(s.db))
-	cat.PUT(":catId", handler.HandleUpdateCat(s.db))
-	cat.DELETE(":catId", handler.HandleDeleteCat(s.db))
+
+	cat.POST("", catHandler.CreateCat())
+	cat.GET("", catHandler.GetAllCats())
+	cat.PUT(":catId", catHandler.UpdateCat())
+	cat.DELETE(":catId", catHandler.DeleteCat())
 
 	// cat match
 	catMatch := cat.Group("/match")

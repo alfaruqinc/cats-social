@@ -13,13 +13,13 @@ type UserRepository interface {
 	GetByEmail(db *sql.DB, userEmail string) (*domain.User, error)
 }
 
-type userImpl struct{}
+type userRepository struct{}
 
 func NewUserPg() UserRepository {
-	return &userImpl{}
+	return &userRepository{}
 }
 
-func (u *userImpl) CreateNewUser(db *sql.DB, userPayload *domain.User) error {
+func (u *userRepository) CreateNewUser(db *sql.DB, userPayload *domain.User) error {
 	query := `INSERT INTO users (id, name, email, password)
 		VALUES ($1, $2, $3, $4)`
 
@@ -30,7 +30,7 @@ func (u *userImpl) CreateNewUser(db *sql.DB, userPayload *domain.User) error {
 	return nil
 }
 
-func (u *userImpl) GetById(db *sql.DB, userId uuid.UUID) (*domain.User, error) {
+func (u *userRepository) GetById(db *sql.DB, userId uuid.UUID) (*domain.User, error) {
 	query := `SELECT id, email, name, password
 		FROM users WHERE id = $1
 	`
@@ -44,7 +44,7 @@ func (u *userImpl) GetById(db *sql.DB, userId uuid.UUID) (*domain.User, error) {
 	return &user, nil
 }
 
-func (u *userImpl) GetByEmail(db *sql.DB, userEmail string) (*domain.User, error) {
+func (u *userRepository) GetByEmail(db *sql.DB, userEmail string) (*domain.User, error) {
 	query := `SELECT id, email, name, password
 		FROM users WHERE email = $1
 	`
