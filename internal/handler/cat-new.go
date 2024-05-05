@@ -55,6 +55,7 @@ func (c *catHandler) CreateCat() gin.HandlerFunc {
 			if err.Status() > 499 {
 				panic(err)
 			}
+			return
 		}
 
 		res := &domain.CreateCatResponse{
@@ -77,6 +78,7 @@ func (c *catHandler) GetAllCats() gin.HandlerFunc {
 			if err.Status() > 499 {
 				panic(err)
 			}
+			return
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"message": "success", "data": &cats})
@@ -117,6 +119,7 @@ func (c *catHandler) UpdateCat() gin.HandlerFunc {
 			if err.Status() > 499 {
 				panic(err)
 			}
+			return
 		}
 
 		updatedAt := time.Now().Format(time.RFC3339)
