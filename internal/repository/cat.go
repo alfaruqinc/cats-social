@@ -23,13 +23,13 @@ type CatRepository interface {
 	CheckBothCatExists(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error)
 }
 
-type CatRepositoryImpl struct{}
+type catRepository struct{}
 
 func NewCatRepository() CatRepository {
-	return &CatRepositoryImpl{}
+	return &catRepository{}
 }
 
-func (c *CatRepositoryImpl) CreateCat(db *sql.DB, catBody *domain.Cat) error {
+func (c *catRepository) CreateCat(db *sql.DB, catBody *domain.Cat) error {
 	query := `INSERT INTO cats (id, created_at, name, race, sex, age_in_month, description, image_urls, owned_by_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
@@ -41,11 +41,11 @@ func (c *CatRepositoryImpl) CreateCat(db *sql.DB, catBody *domain.Cat) error {
 	return nil
 }
 
-func (c *CatRepositoryImpl) GetAllCats(db *sql.DB) ([]domain.Cat, error) {
+func (c *catRepository) GetAllCats(db *sql.DB) ([]domain.Cat, error) {
 	return nil, nil
 }
 
-func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
+func (c *catRepository) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 	query := `
 		UPDATE cats
 		SET name = $2,
@@ -64,7 +64,7 @@ func (c *CatRepositoryImpl) UpdateCat(db *sql.DB, cat *domain.Cat) error {
 	return nil
 }
 
-func (c *CatRepositoryImpl) DeleteCat(db *sql.DB, catId uuid.UUID) error {
+func (c *catRepository) DeleteCat(db *sql.DB, catId uuid.UUID) error {
 	query := `
 		UPDATE cats
 		SET deleted = true
@@ -79,7 +79,7 @@ func (c *CatRepositoryImpl) DeleteCat(db *sql.DB, catId uuid.UUID) error {
 	return nil
 }
 
-func (c *CatRepositoryImpl) CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error {
+func (c *catRepository) CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId uuid.UUID) error {
 	queryCheckCatId := `
 		SELECT EXISTS (
 			SELECT 1
@@ -103,7 +103,7 @@ func (c *CatRepositoryImpl) CheckCatIdExists(db *sql.DB, catId uuid.UUID, userId
 	return nil
 }
 
-func (c *CatRepositoryImpl) CheckEditableSex(db *sql.DB, cat *domain.Cat) error {
+func (c *catRepository) CheckEditableSex(db *sql.DB, cat *domain.Cat) error {
 	queryCheckCatId := `
 		SELECT (sex != $1) as sex_diff, NOT EXISTS (
 			SELECT 1
@@ -128,7 +128,7 @@ func (c *CatRepositoryImpl) CheckEditableSex(db *sql.DB, cat *domain.Cat) error 
 	return nil
 }
 
-func (c *CatRepositoryImpl) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {
+func (c *catRepository) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId uuid.UUID, userId uuid.UUID) (bool, error) {
 	queryCheckCatId := `
 		SELECT EXISTS (
 			SELECT 1
@@ -148,7 +148,7 @@ func (c *CatRepositoryImpl) CheckOwnerCat(ctx context.Context, tx *sql.Tx, catId
 	return owner, nil
 }
 
-func (c *CatRepositoryImpl) CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+func (c *catRepository) CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
 	query := `
 		SELECT c1.sex = c2.sex
 		FROM cats c1
@@ -165,7 +165,7 @@ func (c *CatRepositoryImpl) CheckCatHasSameSex(ctx context.Context, tx *sql.Tx, 
 	return hasSameSex, nil
 }
 
-func (c *CatRepositoryImpl) CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+func (c *catRepository) CheckCatHasMatched(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
 	query := `
 		SELECT c1.has_matched OR c2.has_matched
 		FROM cats c1
@@ -182,7 +182,7 @@ func (c *CatRepositoryImpl) CheckCatHasMatched(ctx context.Context, tx *sql.Tx, 
 	return hasMatched, nil
 }
 
-func (c *CatRepositoryImpl) CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+func (c *catRepository) CheckCatFromSameOwner(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
 	query := `
 		SELECT c1.owned_by_id = c2.owned_by_id
 		FROM cats c1
@@ -199,7 +199,7 @@ func (c *CatRepositoryImpl) CheckCatFromSameOwner(ctx context.Context, tx *sql.T
 	return sameOwner, nil
 }
 
-func (c *CatRepositoryImpl) CheckBothCatExists(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
+func (c *catRepository) CheckBothCatExists(ctx context.Context, tx *sql.Tx, cat1Id uuid.UUID, cat2Id uuid.UUID) (bool, error) {
 	query := `
 		SELECT EXISTS (
 			SELECT 1
