@@ -16,7 +16,7 @@ type catService struct {
 	catRepository repository.CatRepository
 }
 
-func NewCatService(catRepository repository.CatRepository, db *sql.DB) CatService {
+func NewCatService(db *sql.DB, catRepository repository.CatRepository) CatService {
 	return &catService{
 		catRepository: catRepository,
 		db:            db,
